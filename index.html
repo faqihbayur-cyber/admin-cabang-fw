@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#0b7bd1">
   <title>FW Admin</title>
   <link rel="icon" href="logofw.png">
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="root.css">
   <link rel="stylesheet" href="components.css">
   <link rel="stylesheet" href="index.css">
@@ -56,6 +57,11 @@
     <svg class="fab-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
   </button>
 
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+    }
+  </script>
   <script type="module" src="index.js"></script>
   <div id="devConsoleMount"></div>
   <script src="devconsole.js"></script>

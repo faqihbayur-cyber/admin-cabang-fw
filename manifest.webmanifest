@@ -1,0 +1,14 @@
+{
+  "name": "FW Admin",
+  "short_name": "FW Admin",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f3f6fa",
+  "theme_color": "#0b7bd1",
+  "icons": [
+    { "src": "logofw.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "logofw.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

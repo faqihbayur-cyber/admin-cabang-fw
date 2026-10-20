@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#0b7bd1">
   <title>Login FW Admin</title>
   <link rel="icon" href="logofw.png">
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="root.css">
   <link rel="stylesheet" href="components.css">
   <link rel="stylesheet" href="login.css">
@@ -52,6 +53,11 @@
     </section>
   </main>
 
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+    }
+  </script>
   <script type="module" src="login.js"></script>
   <div id="devConsoleMount"></div>
   <script src="devconsole.js"></script>
