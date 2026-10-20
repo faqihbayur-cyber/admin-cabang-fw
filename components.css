@@ -1,0 +1,144 @@
+/* ===== components.css — spinner, toast, alert (dipakai semua halaman) ===== */
+
+/* ---------- Spinner ---------- */
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, .35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  display: inline-block;
+}
+.spinner.dark {
+  border-color: var(--primary-light);
+  border-top-color: var(--primary);
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- Toast ---------- */
+.toast-container {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: var(--z-toast);
+  pointer-events: none;
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  border-left: 5px solid var(--info);
+  font-size: 14px;
+  pointer-events: auto;
+  animation: toastIn .3s ease forwards;
+}
+.toast.success { border-left-color: var(--success); }
+.toast.error   { border-left-color: var(--danger); }
+.toast.warning { border-left-color: var(--warning); }
+.toast .t-icon {
+  width: 24px; height: 24px; flex-shrink: 0;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  color: #fff; font-size: 14px; font-weight: 700;
+  background: var(--info);
+}
+.toast.success .t-icon { background: var(--success); }
+.toast.error .t-icon   { background: var(--danger); }
+.toast.warning .t-icon { background: var(--warning); }
+.toast .t-msg { flex: 1; line-height: 1.35; }
+.toast.hide { animation: toastOut .3s ease forwards; }
+
+@keyframes toastIn  { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes toastOut { to { opacity: 0; transform: translateY(-14px); } }
+
+/* ---------- Alert (modal) ---------- */
+.alert-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, .5);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  z-index: var(--z-modal);
+  animation: fadeIn .2s ease;
+}
+.alert-box {
+  background: var(--surface);
+  width: 100%;
+  max-width: 340px;
+  border-radius: var(--radius);
+  padding: 24px 20px 18px;
+  text-align: center;
+  box-shadow: var(--shadow);
+  animation: popIn .25s ease;
+}
+.alert-icon {
+  width: 54px; height: 54px;
+  margin: 0 auto 12px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 28px; font-weight: 700; color: #fff;
+  background: var(--info);
+}
+.alert-box.success .alert-icon { background: var(--success); }
+.alert-box.error .alert-icon   { background: var(--danger); }
+.alert-box.warning .alert-icon { background: var(--warning); }
+.alert-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+.alert-text  { font-size: 14px; color: var(--text-muted); line-height: 1.45; margin-bottom: 18px; }
+.alert-btn {
+  width: 100%;
+  border: 0;
+  background: var(--primary);
+  color: #fff;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+.alert-btn:active { background: var(--primary-dark); }
+.alert-actions { display: flex; gap: 10px; }
+.alert-actions .alert-btn { flex: 1; }
+.alert-btn.secondary { background: var(--bg); color: var(--text); }
+.alert-btn.secondary:active { background: var(--border); }
+.alert-btn.danger { background: var(--danger); }
+.alert-btn.danger:active { filter: brightness(.9); }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes popIn  { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: scale(1); } }
+
+
+/* ---------- Skeleton (pengganti spinner) ---------- */
+.skel {
+  position: relative;
+  overflow: hidden;
+  background: rgba(120, 135, 160, .18);
+  border-radius: 8px;
+  color: transparent !important;
+  user-select: none;
+  pointer-events: none;
+}
+.skel::after {
+  content: "";
+  position: absolute; inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .55), transparent);
+  animation: skelMove 1.2s ease-in-out infinite;
+}
+@keyframes skelMove { to { transform: translateX(100%); } }
+
+.skel-page { display: flex; flex-direction: column; gap: 12px; }
+.skel-line { height: 20px; }
+.skel-line.w60 { width: 60%; }
+.skel-block { height: 76px; border-radius: var(--radius); }

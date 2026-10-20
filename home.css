@@ -1,0 +1,87 @@
+/* home.css — view Home: dashboard cabang */
+.v-home { display: flex; flex-direction: column; gap: 12px; padding-bottom: 24px; }
+
+/* ---------- Header ---------- */
+.hm-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: linear-gradient(160deg, var(--primary), var(--accent)); color: #fff;
+  border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 16px;
+}
+.hm-head-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.hm-hi { font-size: 18px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hm-date { font-size: 13px; opacity: .9; }
+.hm-refresh {
+  flex-shrink: 0; width: 40px; height: 40px; border: 0; border-radius: 50%; cursor: pointer;
+  background: rgba(255, 255, 255, .22); color: #fff; display: grid; place-items: center;
+}
+.hm-refresh:active { background: rgba(255, 255, 255, .38); }
+.hm-refresh.spin svg { animation: spin .8s linear infinite; }
+
+.hm-title { font-size: 14px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .3px; margin-top: 6px; }
+
+/* ---------- Kartu ---------- */
+.hm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.hm-card {
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm);
+  padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; min-width: 0;
+  color: var(--text); text-decoration: none;
+}
+.hm-card.wide { grid-column: 1 / -1; }
+.hm-card.link:active { background: var(--primary-light); }
+.hm-l { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; color: var(--text-muted); }
+.hm-v { font-size: 19px; font-weight: 700; word-break: break-word; }
+.hm-n { font-size: 12px; color: var(--text-muted); line-height: 1.35; }
+.hm-card.pos .hm-v { color: var(--success); }
+.hm-card.neg .hm-v { color: var(--danger); }
+
+.hm-delta { display: inline-flex; align-items: center; gap: 3px; font-weight: 600; }
+.hm-delta.up { color: var(--success); }
+.hm-delta.down { color: var(--danger); }
+
+.hm-skel-l { display: block; height: 11px; width: 55%; }
+.hm-skel-v { display: block; height: 22px; width: 75%; }
+.hm-skel-n { display: block; height: 11px; width: 90%; }
+
+/* ---------- Grafik 7 hari ---------- */
+.hm-chart { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 14px 12px 10px; }
+.hm-skel-chart { display: block; height: 160px; border-radius: var(--radius-sm); }
+.hm-bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; align-items: end; }
+.hm-bar-col { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+.hm-bar-val { font-size: 11px; font-weight: 700; color: var(--text-muted); height: 14px; line-height: 14px; }
+.hm-bar-track {
+  width: 100%; height: 110px; display: flex; align-items: flex-end; justify-content: center;
+  background: var(--bg); border-radius: var(--radius-sm); overflow: hidden;
+}
+.hm-bar { display: block; width: 100%; background: var(--primary); border-radius: var(--radius-sm) var(--radius-sm) 0 0; transition: height .4s ease; }
+.hm-bar-col.now .hm-bar { background: var(--accent); }
+.hm-bar-lbl { display: flex; flex-direction: column; align-items: center; font-size: 11px; color: var(--text-muted); line-height: 1.25; }
+.hm-bar-lbl b { font-size: 13px; color: var(--text); }
+.hm-bar-col.now .hm-bar-lbl b { color: var(--primary); }
+
+/* ---------- Ranking ---------- */
+.hm-rank { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 6px 14px; }
+.hm-rank-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.hm-rank-row:last-child { border-bottom: 0; }
+.hm-rank-no {
+  flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--primary-light); color: var(--primary-dark); font-size: 13px; font-weight: 700;
+}
+.hm-rank-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.hm-rank-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.hm-rank-name { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hm-rank-val { font-weight: 700; font-size: 14px; color: var(--primary-dark); flex-shrink: 0; }
+.hm-rank-track { display: block; height: 6px; border-radius: 99px; background: var(--bg); overflow: hidden; }
+.hm-rank-bar { display: block; height: 100%; border-radius: 99px; background: var(--primary); }
+.hm-skel-rank { display: block; height: 30px; width: 100%; }
+
+.hm-empty {
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm);
+  padding: 24px 18px; text-align: center; color: var(--text-muted); font-size: 14px;
+}
+
+/* ---------- Desktop ---------- */
+@media (min-width: 768px) {
+  .hm-grid { grid-template-columns: repeat(4, 1fr); }
+  .hm-card.wide { grid-column: span 2; }
+  .hm-bar-track { height: 150px; }
+}

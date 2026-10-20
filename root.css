@@ -1,0 +1,48 @@
+/* ===== root.css — atur warna & ukuran global di sini ===== */
+:root {
+  /* Warna utama */
+  --primary: #0b7bd1;
+  --primary-dark: #095fa3;
+  --primary-light: #e6f3fc;
+  --accent: #19b5d6;
+
+  /* Status */
+  --success: #16a34a;
+  --danger: #dc2626;
+  --warning: #f59e0b;
+  --info: #0b7bd1;
+
+  /* Netral */
+  --bg: #f3f6fa;
+  --surface: #ffffff;
+  --text: #1e293b;
+  --text-muted: #64748b;
+  --border: #dbe3ec;
+
+  /* Bentuk */
+  --radius: 14px;
+  --radius-sm: 10px;
+  --shadow: 0 8px 30px rgba(15, 40, 80, .10);
+  --shadow-sm: 0 2px 8px rgba(15, 40, 80, .08);
+
+  /* Font */
+  --font: 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
+
+  /* Layout */
+  --nav-height: 62px;
+  --z-toast: 9999;
+  --z-modal: 9000;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, input { font-family: inherit; font-size: 16px; }

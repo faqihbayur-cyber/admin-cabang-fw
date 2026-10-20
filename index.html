@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b7bd1">
+  <title>FW Admin</title>
+  <link rel="icon" href="logofw.png">
+  <link rel="stylesheet" href="root.css">
+  <link rel="stylesheet" href="components.css">
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+  <div class="app">
+    <header class="topbar">
+      <img src="logofw.png" alt="" class="topbar-logo">
+      <h1 id="viewTitle">Home</h1>
+    </header>
+
+    <!-- Tempat view di-render -->
+    <main class="view" id="view">
+      <div class="skel-page">
+        <div class="skel skel-line w60"></div>
+        <div class="skel skel-block"></div>
+        <div class="skel skel-block"></div>
+        <div class="skel skel-block"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Backdrop -->
+  <div class="backdrop" id="backdrop"></div>
+
+  <!-- Sidebar (muncul dari kanan) -->
+  <aside class="sidebar" id="sidebar" aria-hidden="true">
+    <div class="sidebar-head">
+      <img src="logofw.png" alt="Logo FW">
+      <div>
+        <strong>FW Admin</strong>
+        <small id="userEmail">-</small>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav" id="nav"></nav>
+
+    <button class="sidebar-logout" id="btnLogout" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+      <span>Keluar</span>
+    </button>
+  </aside>
+
+  <!-- Floating button (di depan sidebar) -->
+  <button class="fab" id="fab" type="button" aria-label="Buka menu" aria-expanded="false">
+    <img src="logofw.png" alt="" class="fab-logo">
+    <svg class="fab-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+  </button>
+
+  <script type="module" src="index.js"></script>
+  <div id="devConsoleMount"></div>
+  <script src="devconsole.js"></script>
+</body>
+</html>

@@ -1,0 +1,169 @@
+/* akun.css — view Akun: daftar, bottom sheet detail & form */
+.v-ak { display: flex; flex-direction: column; gap: 14px; padding-bottom: 24px; }
+.ak-hidden { display: none !important; }
+
+/* ---------- Tombol tambah ---------- */
+.ak-add {
+  width: 100%; border: 0; border-radius: var(--radius); padding: 14px;
+  background: var(--primary); color: #fff; font-weight: 700; font-size: 16px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.ak-add:active { background: var(--primary-dark); }
+
+/* ---------- Cari & filter ---------- */
+.ak-tools { display: flex; flex-direction: column; gap: 10px; }
+.ak-search {
+  width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 11px 14px; color: var(--text); background: var(--surface);
+}
+.ak-search:focus, .ak-field input:focus, .ak-field textarea:focus {
+  outline: 2px solid var(--primary); outline-offset: 1px; border-color: transparent;
+}
+.ak-chips { display: flex; gap: 8px; }
+.ak-chip {
+  border: 1px solid var(--border); background: var(--surface); color: var(--text-muted);
+  border-radius: 99px; padding: 7px 16px; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.ak-chip.on { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+/* ---------- Daftar ---------- */
+.ak-count { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+.ak-list { display: flex; flex-direction: column; gap: 10px; }
+.ak-empty {
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm);
+  padding: 28px 18px; text-align: center; color: var(--text-muted); font-size: 14px; line-height: 1.5;
+}
+.ak-item {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  background: var(--surface); border: 1px solid transparent; border-radius: var(--radius);
+  box-shadow: var(--shadow-sm); padding: 12px 14px; text-align: left; cursor: pointer;
+  color: var(--text); transition: border-color .15s, transform .1s;
+}
+.ak-item:active { transform: scale(.985); border-color: var(--primary); }
+.ak-item > svg { color: var(--text-muted); flex-shrink: 0; }
+.ak-item.off .ak-avatar { filter: grayscale(1); opacity: .6; }
+.ak-item.off .ak-item-name { color: var(--text-muted); }
+.ak-item-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.ak-item-name { font-weight: 600; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ak-item-sub { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ak-item-mail { font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.ak-avatar {
+  width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0; object-fit: cover;
+  background: var(--primary-light); color: var(--primary-dark);
+  display: grid; place-items: center; font-weight: 700; font-size: 18px;
+}
+.ak-avatar.big { width: 84px; height: 84px; font-size: 32px; }
+
+.ak-role {
+  display: inline-block; flex-shrink: 0; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px;
+  padding: 2px 8px; border-radius: 99px; background: var(--primary-light); color: var(--primary-dark);
+}
+.ak-role.sales { background: #e0f7fa; color: #0e7490; }
+
+.ak-off-head {
+  width: 100%; margin: 16px 0 8px; padding: 12px 14px; border: 1px dashed var(--border); border-radius: var(--radius-sm);
+  background: transparent; color: var(--text-muted); font-weight: 600; font-size: 14px; cursor: pointer;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.ak-off-head svg { transition: transform .2s; }
+.ak-off-head.open svg { transform: rotate(180deg); }
+
+/* ---------- Skeleton ---------- */
+.ak-item.skel-row { cursor: default; pointer-events: none; }
+.ak-item.skel-row .ak-avatar { background: transparent; }
+.ak-item.skel-row .ak-item-main { gap: 8px; }
+.ak-skel-name { display: block; height: 16px; width: 55%; }
+.ak-skel-sub { display: block; height: 12px; width: 35%; }
+
+/* ---------- Bottom sheet ---------- */
+.ak-sheet-wrap { position: fixed; inset: 0; z-index: var(--z-modal); }
+.ak-sheet-backdrop {
+  position: absolute; inset: 0; background: rgba(15, 23, 42, .45);
+  opacity: 0; transition: opacity .22s;
+}
+.ak-sheet {
+  position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto; max-width: 560px;
+  max-height: 92vh; max-height: 92dvh; display: flex; flex-direction: column;
+  background: var(--surface); border-radius: 20px 20px 0 0;
+  box-shadow: 0 -4px 16px rgba(15, 40, 80, .18);
+  padding: 8px 16px 0;
+  transform: translate3d(0, 100%, 0); transition: transform .26s cubic-bezier(.4, 0, .2, 1);
+}
+.ak-sheet-wrap.show .ak-sheet-backdrop { opacity: 1; }
+.ak-sheet-wrap.show .ak-sheet { transform: translate3d(0, 0, 0); }
+.ak-sheet-grip { width: 40px; height: 4px; border-radius: 99px; background: var(--border); margin: 4px auto 8px; flex-shrink: 0; }
+.ak-sheet-body {
+  flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+}
+
+/* ---------- Detail ---------- */
+.ak-d-head { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 6px 0 14px; }
+.ak-d-name { font-size: 18px; font-weight: 700; text-align: center; word-break: break-word; }
+.ak-d-badges { display: flex; gap: 8px; }
+.ak-state { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; padding: 2px 8px; border-radius: 99px; }
+.ak-state.on { background: #dcfce7; color: #166534; }
+.ak-state.off { background: #fee2e2; color: var(--danger); }
+
+.ak-rows { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.ak-row { display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.ak-row:last-child { border-bottom: 0; }
+.ak-row span { font-size: 12px; color: var(--text-muted); }
+.ak-row b { font-size: 14px; font-weight: 600; word-break: break-word; }
+
+/* ---------- Tombol ---------- */
+.ak-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+.ak-btn {
+  width: 100%; border: 0; border-radius: var(--radius-sm); padding: 13px;
+  background: var(--primary-light); color: var(--primary-dark); font-weight: 700; font-size: 15px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; min-height: 48px;
+}
+.ak-btn.primary { background: var(--primary); color: #fff; }
+.ak-btn.primary:active { background: var(--primary-dark); }
+.ak-btn.danger { background: #fee2e2; color: var(--danger); }
+.ak-btn.success { background: #dcfce7; color: #166534; }
+.ak-btn.small { width: auto; padding: 9px 14px; min-height: 0; font-size: 14px; }
+.ak-btn:disabled { opacity: .7; cursor: default; }
+.ak-btn-ghost {
+  width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px;
+  background: var(--surface); color: var(--text-muted); font-weight: 600; font-size: 15px; cursor: pointer;
+}
+.ak-link { border: 0; background: transparent; color: var(--danger); font-size: 13px; font-weight: 600; cursor: pointer; text-align: left; padding: 0; }
+
+/* konfirmasi (pakai .alert-box dari components.css) */
+.ak-btn-row { display: flex; gap: 10px; }
+.ak-btn-row .ak-btn-ghost, .ak-btn-row .alert-btn { flex: 1; width: auto; }
+.alert-btn.ak-danger { background: var(--danger); }
+
+/* ---------- Form ---------- */
+.ak-f-title { font-size: 17px; font-weight: 700; margin: 2px 0 12px; }
+.ak-photo { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.ak-photo-side { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
+.ak-photo-side small { font-size: 12px; color: var(--text-muted); }
+
+.ak-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.ak-field label { font-size: 13px; color: var(--text-muted); }
+.ak-field input, .ak-field textarea {
+  width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 12px 14px; color: var(--text); background: var(--surface); resize: none; font-family: inherit; font-size: 16px;
+}
+.ak-field input[readonly] { background: var(--bg); color: var(--text-muted); }
+.ak-field .invalid { border-color: var(--danger); }
+.ak-hint { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+
+.ak-seg { display: flex; gap: 8px; }
+.ak-seg-btn {
+  flex: 1; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted);
+  border-radius: var(--radius-sm); padding: 11px; font-weight: 700; text-transform: capitalize; cursor: pointer;
+}
+.ak-seg-btn.on { background: var(--primary); border-color: var(--primary); color: #fff; }
+.ak-seg.locked .ak-seg-btn:not(.on) { display: none; }
+.ak-seg.locked .ak-seg-btn { cursor: default; }
+
+.ak-pass { display: flex; gap: 8px; }
+.ak-pass input { flex: 1; min-width: 0; }
+.ak-eye {
+  border: 1px solid var(--border); background: var(--surface); color: var(--primary-dark);
+  border-radius: var(--radius-sm); padding: 0 12px; font-size: 13px; font-weight: 600; cursor: pointer; flex-shrink: 0;
+}

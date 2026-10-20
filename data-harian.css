@@ -1,0 +1,126 @@
+/* data-harian.css — style khusus view Data Harian */
+.v-dh { display: flex; flex-direction: column; gap: 14px; padding-bottom: 24px; }
+
+.dh-head h2 { font-size: 20px; margin-bottom: 4px; }
+.dh-head p { color: var(--text-muted); font-size: 14px; }
+
+.dh-loading {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 36px 0; color: var(--text-muted); font-size: 14px;
+}
+.dh-empty {
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm);
+  padding: 28px 18px; text-align: center; color: var(--text-muted); font-size: 14px; line-height: 1.5;
+}
+
+/* ---------- Daftar ---------- */
+.dh-list { display: flex; flex-direction: column; gap: 10px; }
+.dh-item {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  background: var(--surface); border: 1px solid transparent; border-radius: var(--radius);
+  box-shadow: var(--shadow-sm); padding: 12px 14px; text-align: left; cursor: pointer;
+  color: var(--text); transition: border-color .15s, transform .1s;
+}
+.dh-item:active { transform: scale(.985); border-color: var(--primary); }
+.dh-item > svg { color: var(--text-muted); flex-shrink: 0; }
+.dh-avatar {
+  width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
+  background: var(--primary-light); color: var(--primary-dark);
+  display: grid; place-items: center; font-weight: 700; font-size: 17px;
+}
+.dh-item-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.dh-item-name { font-weight: 600; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dh-item-sub { display: flex; gap: 6px; }
+
+.dh-role {
+  display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px;
+  padding: 2px 8px; border-radius: 99px; background: var(--primary-light); color: var(--primary-dark);
+}
+.dh-role.sales { background: #e0f7fa; color: #0e7490; }
+.dh-role.off { background: #fee2e2; color: var(--danger); }
+
+/* ---------- Detail ---------- */
+.dh-top {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 10px 12px;
+}
+.dh-back {
+  width: 38px; height: 38px; border-radius: 50%; border: 0; cursor: pointer;
+  background: var(--primary-light); color: var(--primary-dark); display: grid; place-items: center;
+}
+.dh-top-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.dh-top-name { font-weight: 700; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.dh-datebar {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 10px 14px;
+}
+.dh-datebar label { font-size: 13px; color: var(--text-muted); }
+.dh-datebar input {
+  border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 10px;
+  color: var(--text); background: var(--surface);
+}
+
+.dh-badge {
+  font-size: 13px; font-weight: 600; padding: 9px 14px; border-radius: var(--radius-sm);
+}
+.dh-badge.saved { background: #dcfce7; color: #166534; }
+.dh-badge.new { background: #fef3c7; color: #92400e; }
+
+.dh-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.dh-stat {
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm);
+  padding: 12px 14px; display: flex; flex-direction: column; gap: 3px; min-width: 0;
+}
+.dh-stat.wide { grid-column: 1 / -1; }
+.dh-stat-label { font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .3px; }
+.dh-stat-val { font-size: 22px; font-weight: 700; word-break: break-word; }
+.dh-stat-note { font-size: 12px; color: var(--text-muted); line-height: 1.35; }
+.dh-stat.pos .dh-stat-val { color: var(--success); }
+.dh-stat.neg .dh-stat-val { color: var(--danger); }
+
+/* ---------- Input ---------- */
+.dh-form {
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 14px;
+}
+.dh-form h3 { font-size: 16px; margin-bottom: 10px; }
+.dh-form label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; }
+.dh-form input {
+  width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 12px 14px; font-size: 18px; font-weight: 600; color: var(--text); background: var(--surface);
+}
+.dh-form input:focus, .dh-datebar input:focus { outline: 2px solid var(--primary); outline-offset: 1px; border-color: transparent; }
+
+/* ---------- Validasi ---------- */
+.dh-valid {
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm);
+  padding: 14px; display: flex; flex-direction: column; gap: 8px;
+}
+.dh-valid-title { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+.dh-v { display: flex; gap: 10px; font-size: 13px; line-height: 1.4; align-items: flex-start; }
+.dh-v-ico {
+  width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; margin-top: 1px;
+  display: grid; place-items: center; font-size: 11px; font-weight: 800; color: #fff;
+}
+.dh-v.ok .dh-v-ico { background: var(--success); }
+.dh-v.warn .dh-v-ico { background: var(--warning); }
+.dh-v.err .dh-v-ico { background: var(--danger); }
+.dh-v.info .dh-v-ico { background: var(--info); }
+.dh-v.err { color: var(--danger); }
+
+/* ---------- Simpan ---------- */
+.dh-save {
+  width: 100%; border: 0; border-radius: var(--radius); padding: 15px;
+  background: var(--primary); color: #fff; font-weight: 700; font-size: 16px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; min-height: 52px;
+}
+.dh-save:active { background: var(--primary-dark); }
+.dh-save:disabled { opacity: .7; cursor: default; }
+
+/* ---------- Skeleton ---------- */
+.dh-stat-val.skel { display: block; height: 26px; width: 65%; margin: 2px 0; }
+.dh-badge.skel { height: 36px; }
+.dh-item.skel-row { cursor: default; pointer-events: none; }
+.dh-item.skel-row .dh-avatar { background: transparent; }
+.dh-item.skel-row .dh-item-main { gap: 8px; }
+.dh-stat-note:empty { display: none; }

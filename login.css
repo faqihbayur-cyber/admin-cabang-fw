@@ -1,0 +1,122 @@
+/* ===== login.css ===== */
+.login-page {
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: linear-gradient(160deg, var(--primary) 0%, var(--accent) 100%);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 32px 24px 28px;
+  animation: popIn .35s ease;
+}
+
+.login-logo {
+  display: block;
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  margin: 0 auto 14px;
+}
+
+.login-title {
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+}
+.login-sub {
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 4px 0 24px;
+}
+
+.field { margin-bottom: 16px; }
+.field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.input-wrap { position: relative; }
+.input-wrap input {
+  width: 100%;
+  padding: 13px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--text);
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+.input-wrap input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+.input-wrap input.has-toggle { padding-right: 48px; }
+
+.toggle-pass {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 38px;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.toggle-pass svg { width: 22px; height: 22px; }
+
+.btn-login {
+  width: 100%;
+  margin-top: 8px;
+  padding: 14px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: background .2s, opacity .2s;
+}
+.btn-login:active { background: var(--primary-dark); }
+.btn-login:disabled { opacity: .75; cursor: not-allowed; }
+.btn-login .spinner { display: none; }
+.btn-login.loading .spinner { display: inline-block; }
+
+.login-footer {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 20px;
+}
+
+/* Loading awal (cek sesi) */
+.boot {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: grid;
+  place-items: center;
+  z-index: 8000;
+}
+.boot .spinner { width: 38px; height: 38px; border-width: 4px; }
+.boot.hide { display: none; }
+
+@media (min-width: 768px) {
+  .login-card { padding: 40px 36px 32px; }
+}

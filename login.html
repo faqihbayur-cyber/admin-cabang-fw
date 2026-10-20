@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b7bd1">
+  <title>Login FW Admin</title>
+  <link rel="icon" href="logofw.png">
+  <link rel="stylesheet" href="root.css">
+  <link rel="stylesheet" href="components.css">
+  <link rel="stylesheet" href="login.css">
+</head>
+<body>
+
+  <!-- Loading awal saat cek sesi -->
+  <div class="boot" id="boot"><span class="spinner dark"></span></div>
+
+  <main class="login-page">
+    <section class="login-card">
+      <img class="login-logo" src="logofw.png" alt="Logo FW">
+      <h1 class="login-title">FW Admin</h1>
+      <p class="login-sub">Masuk untuk melanjutkan</p>
+
+      <form id="loginForm" novalidate>
+        <div class="field">
+          <label for="email">Email</label>
+          <div class="input-wrap">
+            <input type="email" id="email" placeholder="email@contoh.com" autocomplete="username" inputmode="email" required>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="password">Password</label>
+          <div class="input-wrap">
+            <input type="password" id="password" class="has-toggle" placeholder="Masukkan password" autocomplete="current-password" required>
+            <button type="button" class="toggle-pass" id="togglePass" aria-label="Tampilkan password">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-login" id="btnLogin">
+          <span class="spinner"></span>
+          <span class="btn-text">Masuk</span>
+        </button>
+      </form>
+
+      <p class="login-footer">© FW — FW Admin</p>
+    </section>
+  </main>
+
+  <script type="module" src="login.js"></script>
+  <div id="devConsoleMount"></div>
+  <script src="devconsole.js"></script>
+</body>
+</html>

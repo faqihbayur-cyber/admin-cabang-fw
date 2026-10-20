@@ -1,0 +1,142 @@
+/* laporan-harian.css — tabel laporan individu per kurir/sales */
+.v-lh { display: flex; flex-direction: column; gap: 14px; padding-bottom: 24px; }
+
+/* ---------- Filter ---------- */
+.lh-filter {
+  display: flex; flex-direction: column; gap: 10px;
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 12px;
+}
+.lh-select-skel { height: 46px; border-radius: var(--radius-sm); }
+
+.lh-month { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.lh-month span { font-weight: 700; font-size: 16px; }
+.lh-month button {
+  width: 40px; height: 40px; border-radius: 50%; border: 0; cursor: pointer;
+  background: var(--primary-light); color: var(--primary-dark); display: grid; place-items: center;
+}
+.lh-month button:disabled { opacity: .35; cursor: default; }
+
+/* ---------- Kartu ringkasan ---------- */
+.lh-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.lh-card {
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm);
+  padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; min-width: 0;
+}
+.lh-card.wide { grid-column: 1 / -1; }
+.lh-l { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; color: var(--text-muted); }
+.lh-v { font-size: 19px; font-weight: 700; word-break: break-word; }
+.lh-n { font-size: 12px; color: var(--text-muted); line-height: 1.35; }
+.lh-card.pos .lh-v { color: var(--success); }
+.lh-card.neg .lh-v { color: var(--danger); }
+.lh-card .skel { display: block; }
+
+/* ---------- Tabel ---------- */
+.lh-tablewrap {
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm);
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+}
+.lh-skel-rows { display: flex; flex-direction: column; gap: 8px; padding: 12px; }
+
+.lh-table { width: 100%; min-width: 640px; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+.lh-table th, .lh-table td {
+  padding: 10px 12px; text-align: right; white-space: nowrap;
+  border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums;
+}
+.lh-table thead th {
+  position: sticky; top: 0; background: var(--primary-light); color: var(--primary-dark);
+  font-size: 12px; font-weight: 700; z-index: 2;
+}
+.lh-table tbody tr:last-child td { border-bottom: 0; }
+
+/* kolom tanggal dikunci di kiri */
+.lh-table .lh-date {
+  position: sticky; left: 0; text-align: left; z-index: 1;
+  background: var(--surface); box-shadow: 1px 0 0 var(--border);
+  display: table-cell;
+}
+.lh-table thead .lh-date { background: var(--primary-light); z-index: 3; }
+td.lh-date b { font-size: 14px; margin-right: 6px; }
+td.lh-date small { color: var(--text-muted); font-size: 11px; }
+td.lh-date.minggu b, td.lh-date.minggu small { color: var(--danger); }
+
+.lh-table td.pos { color: var(--success); font-weight: 600; }
+.lh-table td.neg { color: var(--danger); font-weight: 600; }
+
+.lh-table tr.empty td { color: var(--text-muted); text-align: left; font-size: 12px; font-style: italic; background: rgba(120, 135, 160, .06); }
+.lh-table tr.empty td.lh-date { font-style: normal; background: #f6f8fb; }
+
+.lh-table tfoot td {
+  position: sticky; bottom: 0; background: var(--primary-light); font-weight: 700;
+  border-top: 2px solid var(--primary); border-bottom: 0; z-index: 2;
+}
+.lh-table tfoot td.lh-date { background: var(--primary-light); z-index: 3; }
+
+.lh-hint { font-size: 12px; color: var(--text-muted); line-height: 1.5; padding: 0 4px; }
+
+.lh-empty {
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm);
+  padding: 28px 18px; text-align: center; color: var(--text-muted); font-size: 14px;
+}
+
+/* ---------- Tombol pilih kurir/sales ---------- */
+.lh-pick {
+  width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; cursor: pointer;
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px;
+}
+.lh-pick:active { border-color: var(--primary); }
+.lh-pick-ico {
+  width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+  background: var(--primary-light); color: var(--primary-dark);
+  display: grid; place-items: center; font-weight: 700; font-size: 16px;
+}
+.lh-pick-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.lh-pick-name { font-weight: 700; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lh-pick-sub { font-size: 12px; color: var(--text-muted); text-transform: capitalize; }
+.lh-chev { color: var(--text-muted); flex-shrink: 0; }
+
+/* ---------- Popup (bottom sheet) ---------- */
+.lh-sheet-wrap { position: fixed; inset: 0; z-index: var(--z-modal); }
+.lh-sheet-backdrop {
+  position: absolute; inset: 0; background: rgba(15, 23, 42, .45);
+  opacity: 0; transition: opacity .22s;
+}
+.lh-sheet {
+  position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto; max-width: 520px;
+  max-height: 72vh; display: flex; flex-direction: column;
+  background: var(--surface); border-radius: 20px 20px 0 0;
+  box-shadow: 0 -10px 40px rgba(15, 40, 80, .2);
+  padding: 8px 14px calc(14px + env(safe-area-inset-bottom));
+  transform: translateY(100%); transition: transform .26s cubic-bezier(.4, 0, .2, 1);
+}
+.lh-sheet-wrap.show .lh-sheet-backdrop { opacity: 1; }
+.lh-sheet-wrap.show .lh-sheet { transform: none; }
+.lh-sheet-grip { width: 40px; height: 4px; border-radius: 99px; background: var(--border); margin: 4px auto 10px; }
+.lh-sheet-title { font-weight: 700; font-size: 16px; padding: 0 4px 10px; }
+.lh-sheet-list { overflow-y: auto; display: flex; flex-direction: column; gap: 6px; -webkit-overflow-scrolling: touch; }
+
+.lh-opt {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; cursor: pointer;
+  background: var(--surface); color: var(--text); border: 1px solid transparent;
+  border-radius: var(--radius-sm); padding: 10px 10px;
+}
+.lh-opt:active { background: var(--primary-light); }
+.lh-opt.active { background: var(--primary-light); border-color: var(--primary); }
+.lh-opt.skel-row { pointer-events: none; }
+.lh-opt-ico {
+  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+  background: var(--primary-light); color: var(--primary-dark);
+  display: grid; place-items: center; font-weight: 700; font-size: 16px;
+}
+.lh-opt.active .lh-opt-ico { background: var(--surface); }
+.lh-opt-ico.all { background: var(--primary); color: #fff; }
+.lh-opt-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.lh-opt-name { font-weight: 600; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lh-opt-sub { font-size: 12px; color: var(--text-muted); }
+.lh-check { color: var(--primary); flex-shrink: 0; }
+
+.lh-role {
+  display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px;
+  padding: 2px 8px; border-radius: 99px; background: var(--primary-light); color: var(--primary-dark);
+}
+.lh-role.sales { background: #e0f7fa; color: #0e7490; }

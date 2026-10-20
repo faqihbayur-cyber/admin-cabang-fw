@@ -1,0 +1,105 @@
+/* stockopname.css — input stok galon + tabel saldo beruntun */
+.v-so { display: flex; flex-direction: column; gap: 14px; padding-bottom: 24px; }
+
+/* ---------- Form ---------- */
+.so-form {
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm);
+  padding: 14px; display: flex; flex-direction: column; gap: 12px;
+}
+.so-form h3 { font-size: 16px; }
+.so-form label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; }
+.so-form label small { font-size: 11px; }
+.so-form input {
+  width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 12px 14px; font-size: 18px; font-weight: 600; color: var(--text); background: var(--surface);
+}
+.so-form input:focus { outline: 2px solid var(--primary); outline-offset: 1px; border-color: transparent; }
+.so-form input:disabled { background: #f1f4f8; color: var(--text-muted); cursor: not-allowed; }
+.so-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.so-row label { margin: 0; }
+.so-row input { width: auto; font-size: 15px; padding: 8px 10px; }
+
+.so-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.so-fields .so-wide { grid-column: 1 / -1; }
+
+.so-badge { font-size: 13px; font-weight: 600; padding: 9px 14px; border-radius: var(--radius-sm); min-height: 36px; }
+.so-badge.saved { background: #dcfce7; color: #166534; }
+.so-badge.new { background: #fef3c7; color: #92400e; }
+.so-badge.skel { height: 36px; }
+
+.so-lock {
+  background: #fee2e2; color: #991b1b; font-size: 13px; line-height: 1.45;
+  padding: 10px 14px; border-radius: var(--radius-sm);
+}
+
+.so-save {
+  width: 100%; border: 0; border-radius: var(--radius); padding: 14px;
+  background: var(--primary); color: #fff; font-weight: 700; font-size: 16px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; min-height: 50px;
+}
+.so-save:active { background: var(--primary-dark); }
+.so-save:disabled { opacity: .55; cursor: not-allowed; }
+
+/* ---------- Filter bulan ---------- */
+.so-filter {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 10px 12px;
+}
+.so-filter span { font-weight: 700; font-size: 16px; }
+.so-filter button {
+  width: 40px; height: 40px; border-radius: 50%; border: 0; cursor: pointer;
+  background: var(--primary-light); color: var(--primary-dark); display: grid; place-items: center;
+}
+.so-filter button:disabled { opacity: .35; cursor: default; }
+
+/* ---------- Kartu ---------- */
+.so-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.so-card {
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm);
+  padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; min-width: 0;
+}
+.so-card.strong { background: var(--primary-light); box-shadow: none; }
+.so-l { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; color: var(--text-muted); }
+.so-v { font-size: 21px; font-weight: 700; }
+.so-v.neg, .so-table .neg { color: var(--danger); }
+
+/* ---------- Tabel ---------- */
+.so-tablewrap {
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm);
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+}
+.so-skel-rows { display: flex; flex-direction: column; gap: 8px; padding: 12px; }
+
+.so-table { width: 100%; min-width: 460px; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+.so-table th, .so-table td {
+  padding: 10px 12px; text-align: right; white-space: nowrap;
+  border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums;
+}
+.so-table thead th { background: var(--primary-light); color: var(--primary-dark); font-size: 12px; font-weight: 700; }
+.so-table tbody tr:last-child td { border-bottom: 0; }
+
+.so-table .so-date {
+  position: sticky; left: 0; text-align: left; background: var(--surface);
+  box-shadow: 1px 0 0 var(--border); z-index: 1;
+}
+.so-table thead .so-date { background: var(--primary-light); z-index: 3; }
+td.so-date b { font-size: 14px; margin-right: 6px; }
+td.so-date small { color: var(--text-muted); font-size: 11px; }
+td.so-date.minggu b, td.so-date.minggu small { color: var(--danger); }
+
+.so-table tr.empty td { color: var(--text-muted); text-align: left; font-size: 12px; font-style: italic; background: rgba(120, 135, 160, .06); }
+.so-table tr.empty td.so-date { font-style: normal; background: #f6f8fb; }
+.so-miss { color: #b45309; font-size: 12px; font-style: italic; }
+.so-cellskel { display: inline-block; width: 44px; height: 14px; vertical-align: middle; }
+
+.so-table tfoot td {
+  position: sticky; bottom: 0; background: var(--primary-light); font-weight: 700;
+  border-top: 2px solid var(--primary); border-bottom: 0; z-index: 2;
+}
+.so-table tfoot td.so-date { z-index: 3; background: var(--primary-light); }
+
+.so-hint { font-size: 12px; color: var(--text-muted); line-height: 1.5; padding: 0 4px; }
+.so-empty {
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm);
+  padding: 28px 18px; text-align: center; color: var(--text-muted); font-size: 14px; line-height: 1.5;
+}
