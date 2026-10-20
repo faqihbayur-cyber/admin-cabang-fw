@@ -290,10 +290,32 @@ export function mount(el, ctx) {
   }
 
   function hitung(kasbon) {
+    const closing = state.closing || 0;
+    const omset = state.omset || 0;
+    const hppDistribusi = num(cabang?.hpp?.distribusi);
+    const pembayaranProduksi = closing * hppDistribusi;
+    const bonus = hitungBonus(closing, cabang?.bonus);
+    const potongan = hitungPotongan(closing, cabang?.potongan);
+    const kasDistribusi = omset - pembayaranProduksi - kasbon;   // boleh minus
+
+    // hari kerja = jumlah hari pada bulan tanggal laporan dikurangi hari Minggu
+    const [y, m] = String(state.tanggal).split("-").map(Number);
+    const hariBulan = y && m ? new Date(y, m, 0).getDate() : 30;
+    let hariMinggu = 0;
+    if (y && m) {
+      for (let d = 1; d <= hariBulan; d++) if (new Date(y, m - 1, d).getDay() === 0) hariMinggu++;
+    }
+    const hariKerja = Math.max(hariBulan - hariMinggu, 1);
+    const upahKurir = num(cabang?.upahKurir);
+    const upahHarian = upahKurir / hariKerja;
+    const hargaJual = num(cabang?.hpp?.hargaJual);
+    const pendapatan = closing * hargaJual;
+    const marginDistribusi = pendapatan - pembayaranProduksi - upahHarian + potongan - bonus;
+
     return {
-      bonus: hitungBonus(state.closing || 0, cabang?.bonus),
-      potongan: hitungPotongan(state.closing || 0, cabang?.potongan),
-      kasbon
+      bonus, potongan, kasbon,
+      hppDistribusi, pembayaranProduksi, kasDistribusi,
+      hariBulan, hariMinggu, hariKerja, upahKurir, upahHarian, hargaJual, pendapatan, marginDistribusi
     };
   }
 
@@ -311,6 +333,9 @@ export function mount(el, ctx) {
 
     if (!cabang?.bonus?.ketentuan) add("warn", "Ketentuan bonus belum diatur di kantor cabang, bonus dihitung Rp 0.");
     if (!cabang?.potongan?.ketentuan) add("warn", "Ketentuan potongan belum diatur di kantor cabang, potongan dihitung Rp 0.");
+    if (!num(cabang?.hpp?.hargaJual)) add("warn", "Harga jual belum diatur di kantor cabang (hpp.hargaJual), pendapatan margin dihitung Rp 0.");
+    if (!num(cabang?.upahKurir)) add("warn", "Upah kurir belum diatur di kantor cabang, margin distribusi dihitung tanpa upah kurir.");
+    if (!num(cabang?.hpp?.distribusi)) add("warn", "HPP distribusi belum diatur di kantor cabang, pembayaran produksi dihitung Rp 0.");
 
     if (state.repeat === 0) {
       add("warn", "Belum ada entri data harian pada tanggal ini. Closing, repeat & omset bernilai 0" +
@@ -344,6 +369,16 @@ export function mount(el, ctx) {
         <div class="dh-stat wide">
           <span class="dh-stat-label">Omset</span>
           <span class="dh-stat-val" id="dhOmset"></span>
+        </div>
+        <div class="dh-stat wide">
+          <span class="dh-stat-label">Pembayaran Produksi</span>
+          <span class="dh-stat-val" id="dhPayProd"></span>
+          <span class="dh-stat-note" id="dhPayProdInfo"></span>
+        </div>
+        <div class="dh-stat wide" id="dhKasDistCard">
+          <span class="dh-stat-label">Kas Distribusi</span>
+          <span class="dh-stat-val" id="dhKasDist"></span>
+          <span class="dh-stat-note">omset − pembayaran produksi − kasbon</span>
         </div>
         <div class="dh-stat wide" id="dhHSCard">
           <span class="dh-stat-label" id="dhHSLabel">Hutang / Saldo</span>
@@ -420,6 +455,13 @@ export function mount(el, ctx) {
     root.querySelector("#dhHSCard").className = "dh-stat wide " + (hs < 0 ? "neg" : hs > 0 ? "pos" : "");
 
     const h = hitung(kasbon);
+    setVal("#dhPayProd", known ? 1 : null, rp(h.pembayaranProduksi));
+    setVal("#dhKasDist", known ? 1 : null, rp(h.kasDistribusi));
+    root.querySelector("#dhPayProdInfo").textContent = h.hppDistribusi
+      ? `${fmt(s.closing || 0)} closing × ${rp(h.hppDistribusi)} (HPP distribusi)`
+      : "HPP distribusi belum diatur";
+    root.querySelector("#dhKasDistCard").className =
+      "dh-stat wide " + (!known ? "" : h.kasDistribusi < 0 ? "neg" : h.kasDistribusi > 0 ? "pos" : "");
     setVal("#dhBonus", known ? 1 : null, rp(h.bonus));
     setVal("#dhPot", known ? 1 : null, rp(h.potongan));
 
@@ -496,16 +538,13 @@ export function mount(el, ctx) {
       closing: s.closing,
       pelangganRepeat: s.repeat,
       omset: s.omset,
+      pembayaranProduksi: h.pembayaranProduksi,
+      kasDistribusi: h.kasDistribusi,
+      marginDistribusi: h.marginDistribusi,
       hutangSaldo: s.hutangSaldo,
       bonus: h.bonus,
       potongan: h.potongan,
       kasbon: h.kasbon,
-      ketentuanBonus: cabang?.bonus
-        ? { ketentuan: num(cabang.bonus.ketentuan), kelipatan: num(cabang.bonus.kelipatan), klaim: num(cabang.bonus.klaim) }
-        : null,
-      ketentuanPotongan: cabang?.potongan
-        ? { ketentuan: num(cabang.potongan.ketentuan), kelipatan: num(cabang.potongan.kelipatan), potonganUpah: num(cabang.potongan.potonganUpah) }
-        : null,
       updatedAt: serverTimestamp()
     };
     if (!s.exists) payload.createdAt = serverTimestamp();

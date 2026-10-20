@@ -41,6 +41,11 @@ const ROUTES = {
     load: () => import("./pengeluaran.js"),
     icon: '<rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.5"/><path d="M6 10v5M18 10v5"/>'
   },
+  "cash-flow": {
+    label: "Cash Flow",
+    load: () => import("./cashflow.js"),
+    icon: '<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>'
+  },
   "customer": {
     label: "Customer",
     load: () => import("./customer.js"),

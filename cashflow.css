@@ -1,0 +1,154 @@
+/* cashflow.css — list cash flow per tanggal + popup (bottom sheet) */
+.v-cf { display: flex; flex-direction: column; gap: 14px; padding-bottom: 24px; }
+
+/* ---------- Tombol input ---------- */
+.cf-open {
+  width: 100%; border: 0; border-radius: var(--radius); padding: 14px;
+  background: var(--primary); color: #fff; font-weight: 700; font-size: 16px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 50px;
+}
+.cf-open:active { background: var(--primary-dark); }
+.cf-open:disabled { opacity: .55; cursor: not-allowed; }
+
+/* ---------- Filter bulan ---------- */
+.cf-filter {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 10px 12px;
+}
+.cf-filter span { font-weight: 700; font-size: 16px; }
+.cf-filter button {
+  width: 40px; height: 40px; border-radius: 50%; border: 0; cursor: pointer;
+  background: var(--primary-light); color: var(--primary-dark); display: grid; place-items: center;
+}
+.cf-filter button:disabled { opacity: .35; cursor: default; }
+
+/* ---------- Kartu ---------- */
+.cf-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cf-card {
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm);
+  padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; min-width: 0;
+}
+.cf-card.strong { grid-column: 1 / -1; background: var(--primary-light); box-shadow: none; }
+.cf-l { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; color: var(--text-muted); }
+.cf-v { font-size: 21px; font-weight: 700; word-break: break-word; }
+.cf-v.sm { font-size: 17px; }
+.pos { color: var(--success); }
+.neg { color: var(--danger); }
+
+/* ---------- Tabel ---------- */
+.cf-tablewrap {
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm);
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+}
+.cf-skel-rows { display: flex; flex-direction: column; gap: 8px; padding: 12px; }
+
+.cf-table { width: 100%; min-width: 360px; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+.cf-table th, .cf-table td {
+  padding: 10px 12px; text-align: right; white-space: nowrap;
+  border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums;
+}
+.cf-table thead th { background: var(--primary-light); color: var(--primary-dark); font-size: 12px; font-weight: 700; }
+.cf-table tbody tr { cursor: pointer; }
+.cf-table tbody tr:active td { background: var(--primary-light); }
+.cf-table tbody tr:last-child td { border-bottom: 0; }
+.cf-table td.pos { color: var(--success); }
+.cf-table td.neg { color: var(--danger); }
+.cf-table td.cf-ck { color: var(--success); font-weight: 700; padding-left: 4px; }
+
+.cf-table .cf-date {
+  position: sticky; left: 0; text-align: left; background: var(--surface);
+  box-shadow: 1px 0 0 var(--border); z-index: 1;
+}
+.cf-table thead .cf-date { background: var(--primary-light); z-index: 3; }
+td.cf-date b { font-size: 14px; margin-right: 6px; }
+td.cf-date small { color: var(--text-muted); font-size: 11px; }
+td.cf-date.minggu b, td.cf-date.minggu small { color: var(--danger); }
+.cf-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--primary); vertical-align: middle; margin-left: 4px; }
+
+.cf-table tr.empty td { color: var(--text-muted); text-align: left; font-size: 12px; font-style: italic; background: rgba(120, 135, 160, .06); }
+.cf-table tr.empty td.cf-date { font-style: normal; background: #f6f8fb; }
+
+.cf-table tfoot td {
+  position: sticky; bottom: 0; background: var(--primary-light); font-weight: 700;
+  border-top: 2px solid var(--primary); border-bottom: 0; z-index: 2;
+}
+.cf-table tfoot td.cf-date { z-index: 3; background: var(--primary-light); }
+
+.cf-hint { font-size: 12px; color: var(--text-muted); line-height: 1.5; padding: 0 4px; }
+.cf-empty {
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm);
+  padding: 28px 18px; text-align: center; color: var(--text-muted); font-size: 14px; line-height: 1.5;
+}
+
+/* ---------- Popup (bottom sheet) ---------- */
+.cf-sheet-wrap { position: fixed; inset: 0; z-index: var(--z-modal); contain: layout paint style; }
+.cf-sheet-backdrop {
+  position: absolute; inset: 0; background: rgba(15, 23, 42, .45);
+  opacity: 0; transition: opacity .22s; will-change: opacity;
+}
+.cf-sheet {
+  position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto; max-width: 560px;
+  max-height: 92vh; max-height: 92dvh; display: flex; flex-direction: column;
+  background: var(--surface); border-radius: 20px 20px 0 0;
+  box-shadow: 0 -4px 16px rgba(15, 40, 80, .18);
+  padding: 8px 14px 0;
+  transform: translate3d(0, 100%, 0); transition: transform .26s cubic-bezier(.4, 0, .2, 1); will-change: transform;
+}
+.cf-sheet-wrap.show .cf-sheet-backdrop { opacity: 1; }
+.cf-sheet-wrap.show .cf-sheet { transform: translate3d(0, 0, 0); }
+.cf-sheet-grip { width: 40px; height: 4px; border-radius: 99px; background: var(--border); margin: 4px auto 8px; flex-shrink: 0; }
+.cf-sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 0 2px 8px; flex-shrink: 0; }
+.cf-sheet-head h3 { font-size: 16px; }
+.cf-x { width: 34px; height: 34px; border: 0; border-radius: 50%; background: #f1f4f8; color: var(--text-muted); cursor: pointer; font-size: 14px; }
+
+.cf-sheet-top { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; padding-bottom: 8px; }
+.cf-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.cf-row label { font-size: 13px; color: var(--text-muted); }
+.cf-row input {
+  border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 10px;
+  font-size: 15px; font-weight: 600; color: var(--text); background: var(--surface);
+}
+.cf-badge { font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: var(--radius-sm); }
+.cf-badge.saved { background: #dcfce7; color: #166534; }
+.cf-badge.new { background: #fef3c7; color: #92400e; }
+.cf-lock { background: #fee2e2; color: #991b1b; font-size: 13px; line-height: 1.45; padding: 10px 14px; border-radius: var(--radius-sm); }
+
+/* isi */
+.cf-sheet-body {
+  flex: 1; min-height: 120px; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain;
+  display: flex; flex-direction: column; gap: 12px; padding-bottom: 12px;
+}
+.cf-date-title { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+.cf-group { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.cf-group h4 { font-size: 13px; text-transform: uppercase; letter-spacing: .4px; color: var(--primary-dark); }
+.cf-line { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-size: 14px; }
+.cf-line span { color: var(--text-muted); }
+.cf-line b { font-variant-numeric: tabular-nums; text-align: right; }
+.cf-line.total { border-top: 1px dashed var(--border); padding-top: 8px; }
+.cf-line.total span { color: var(--text); font-weight: 700; }
+.cf-line.total b { font-size: 17px; }
+.cf-line b.pos { color: var(--success); }
+.cf-line b.neg { color: var(--danger); }
+.cf-note { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+/* geser untuk menutup: cegah pull-to-refresh browser */
+html.cf-sheet-open, html.cf-sheet-open body { overscroll-behavior-y: contain; }
+.cf-sheet { overscroll-behavior: contain; }
+.cf-sheet-grip, .cf-sheet-head, .cf-sheet-top, .cf-sheet-foot { touch-action: none; }
+
+/* footer */
+.cf-sheet-foot {
+  flex-shrink: 0; border-top: 1px solid var(--border); padding: 10px 0 calc(12px + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; gap: 10px; background: var(--surface);
+}
+.cf-sum { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.cf-sum b.big { font-size: 19px; color: var(--primary-dark); }
+.cf-sum b.big.pos { color: var(--success); }
+.cf-sum b.big.neg { color: var(--danger); }
+.cf-save {
+  width: 100%; border: 0; border-radius: var(--radius); padding: 14px;
+  background: var(--primary); color: #fff; font-weight: 700; font-size: 16px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; min-height: 50px;
+}
+.cf-save:active { background: var(--primary-dark); }
+.cf-save:disabled { opacity: .55; cursor: not-allowed; }
