@@ -1,9 +1,9 @@
 // customer.js — view Customer: list (10 per halaman, scroll otomatis), filter, KPI, edit, peta Leaflet
 import {
   collection, query, where, orderBy, limit, startAfter,
-  getDocs, getCountFromServer, doc, updateDoc, serverTimestamp
+  getDocs, getCountFromServer, doc, updateDoc, writeBatch, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { toast } from "./ui.js";
+import { toast, confirmBox } from "./ui.js";
 import { esc, fmt, rp, num, kb, createIdb, kompresFoto, MAX_FOTO } from "./lib.js";
 
 export const css = new URL("./customer.css", import.meta.url).href;
@@ -89,7 +89,11 @@ export function mount(el, ctx) {
   const layers = [];              // sheet / peta yang sedang terbuka (back Android menutup yang paling atas)
   let sheetBusy = false;
   let map = null;
-  let mini = null;                // ringkasan customer di atas peta
+  let mini = null;
+  let selectMode = false;
+  const selected = new Set();     // id customer yang dicentang
+  let actionBusy = false;
+  let modalCancel = null;         // penutup modal konfirmasi yang sedang terbuka (untuk tombol back)                // ringkasan customer di atas peta
 
   el.innerHTML = `
     <section class="v-cu">
@@ -175,7 +179,8 @@ export function mount(el, ctx) {
   function cardHtml(c) {
     const pm = userMap.get(c.pemilik);
     return `
-      <div class="cu-item${c.status ? "" : " off"}" data-id="${esc(c.id)}">
+      <div class="cu-item${c.status ? "" : " off"}${selected.has(c.id) ? " sel" : ""}" data-id="${esc(c.id)}">
+        <span class="cu-check" aria-hidden="true">✓</span>
         <button class="cu-item-main" type="button" data-act="open">
           ${avatar(c)}
           <span class="cu-item-text">
@@ -392,7 +397,15 @@ export function mount(el, ctx) {
     return { wrap, sheet, body };
   }
   const closeTop = () => { if (layers.length) history.back(); };
-  const onPop = () => { if (alive) popLayer(); };
+  const onPop = () => {
+    if (!alive) return;
+    if (modalCancel) {                       // back saat modal konfirmasi terbuka: tutup modal saja
+      modalCancel();
+      history.pushState({ cu: layers.length }, "");
+      return;
+    }
+    popLayer();
+  };
   window.addEventListener("popstate", onPop);
   if (history.state && history.state.cu) history.replaceState(null, "");
 
@@ -672,6 +685,239 @@ export function mount(el, ctx) {
     window.open(`https://wa.me/${n}`, "_blank", "noopener");
   }
 
+  /* ===== Mode centang (tekan lama) ===== */
+  const rootEl = el.querySelector(".v-cu");
+  let selBar = null;
+  let lpTimer = 0, lpX = 0, lpY = 0, lpFired = false;
+
+  const rowNode = (id) => listEl.querySelector(`.cu-item[data-id="${CSS.escape(id)}"]`);
+  const waitLayers = (n) => new Promise((res) => {
+    const t = () => (!alive || layers.length <= n ? res() : setTimeout(t, 16));
+    t();
+  });
+
+  // modal konfirmasi custom; tombol back menutupnya (bukan keluar dari mode centang)
+  async function konfirmasi(opts) {
+    const p = confirmBox(opts);
+    const ov = document.body.lastElementChild;
+    const no = ov && ov.querySelector(".alert-btn.secondary");
+    modalCancel = no ? () => no.click() : null;
+    try { return await p; } finally { modalCancel = null; }
+  }
+
+  const paintSelCount = () => {
+    if (selBar) selBar.querySelector("#cuSelCount").textContent = `${selected.size} dipilih`;
+  };
+  const setBusy = (v) => { actionBusy = v; if (selBar) selBar.classList.toggle("busy", v); };
+  const selesaiSelect = () => {
+    const top = layers[layers.length - 1];
+    if (selectMode && top && top.type === "select") closeTop();
+  };
+
+  function enterSelect(id) {
+    if (selectMode) { if (!selected.has(id)) toggleSel(id); return; }
+    selectMode = true;
+    selected.add(id);
+    rootEl.classList.add("selecting");
+
+    const bar = document.createElement("div");
+    bar.className = "cu-selbar";
+    bar.innerHTML = `
+      <button class="cu-sel-x" type="button" id="cuSelX" aria-label="Batalkan pilihan">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <span class="cu-sel-count" id="cuSelCount"></span>
+      <button class="cu-sel-btn" type="button" id="cuSelAll" aria-label="Pilih semua">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12.5l4.5 4.5L15 8.5"/><path d="M10 15l1.5 1.5L21 7"/></svg>
+        <span>Semua</span>
+      </button>
+      <button class="cu-sel-btn" type="button" id="cuSelOwner" aria-label="Pindah pemilik">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        <span>Pemilik</span>
+      </button>
+      <button class="cu-sel-btn danger" type="button" id="cuSelDel" aria-label="Hapus customer">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/></svg>
+        <span>Hapus</span>
+      </button>`;
+    document.body.appendChild(bar);
+    selBar = bar;
+    bar.getBoundingClientRect();
+    requestAnimationFrame(() => bar.classList.add("show"));
+    bar.querySelector("#cuSelX").addEventListener("click", closeTop);
+    bar.querySelector("#cuSelAll").addEventListener("click", pilihSemua);
+    bar.querySelector("#cuSelOwner").addEventListener("click", openMovePicker);
+    bar.querySelector("#cuSelDel").addEventListener("click", hapusTerpilih);
+
+    pushLayer({
+      type: "select", el: bar,
+      destroy: () => {
+        selectMode = false;
+        selected.clear();
+        selBar = null;
+        rootEl.classList.remove("selecting");
+        listEl.querySelectorAll(".cu-item.sel").forEach((n) => n.classList.remove("sel"));
+      }
+    });
+
+    const n = rowNode(id);
+    if (n) n.classList.add("sel");
+    paintSelCount();
+  }
+
+  // pilih semua customer yang sudah dimuat; kalau semuanya sudah tercentang, tekan lagi = batal semua
+  function pilihSemua() {
+    if (actionBusy || !items.length) return;
+    if (items.every((c) => selected.has(c.id))) { closeTop(); return; }
+    items.forEach((c) => {
+      selected.add(c.id);
+      const n = rowNode(c.id);
+      if (n) n.classList.add("sel");
+    });
+    paintSelCount();
+  }
+
+  function toggleSel(id) {
+    if (selected.has(id)) selected.delete(id); else selected.add(id);
+    const n = rowNode(id);
+    if (n) n.classList.toggle("sel", selected.has(id));
+    if (!selected.size) { closeTop(); return; }     // centang terakhir dibatalkan -> keluar mode centang
+    paintSelCount();
+  }
+
+  // tekan lama ~0,45 detik pada kartu -> mode centang
+  listEl.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    lpFired = false;
+    clearTimeout(lpTimer);
+    const row = e.target.closest(".cu-item[data-id]");
+    if (!row || e.target.closest('[data-act="wa"], [data-act="map"]')) return;
+    lpX = e.clientX; lpY = e.clientY;
+    lpTimer = setTimeout(() => {
+      lpTimer = 0;
+      if (actionBusy) return;
+      lpFired = true;
+      if (navigator.vibrate) navigator.vibrate(12);
+      enterSelect(row.dataset.id);
+    }, 450);
+  });
+  listEl.addEventListener("pointermove", (e) => {
+    if (lpTimer && Math.hypot(e.clientX - lpX, e.clientY - lpY) > 10) { clearTimeout(lpTimer); lpTimer = 0; }
+  });
+  ["pointerup", "pointercancel", "pointerleave"].forEach((ev) => {
+    listEl.addEventListener(ev, () => { clearTimeout(lpTimer); lpTimer = 0; });
+  });
+  listEl.addEventListener("contextmenu", (e) => e.preventDefault());
+
+  /* ----- Aksi massal ----- */
+  async function commitChunks(ids, fn) {
+    for (let i = 0; i < ids.length; i += 400) {
+      const b = writeBatch(db);
+      ids.slice(i, i + 400).forEach((id) => fn(b, id));
+      await b.commit();
+    }
+  }
+
+  function gagalAksi(err, ids) {
+    console.error(err);
+    toast(err?.code === "permission-denied"
+      ? "Ditolak aturan Firestore. Pastikan rules sudah diperbarui."
+      : "Gagal memproses. Coba lagi.", "error", 4500);
+    if (ids.length > 400) { selesaiSelect(); reload(); }   // bisa sebagian sudah terproses -> sinkron ulang
+  }
+
+  function dropItems(ids) {
+    const s = new Set(ids);
+    items = items.filter((c) => !s.has(c.id));
+    ids.forEach((id) => { const n = rowNode(id); if (n) n.remove(); });
+    saveCache();
+    paintKpi();
+    fetchCount().then((n) => { if (alive) { total = n; paintKpi(); } }).catch(() => {});
+    if (!items.length) { if (hasMore) loadMore(); else paintList(); } else paintFoot();
+  }
+
+  async function hapusTerpilih() {
+    if (actionBusy || !selected.size) return;
+    const ids = [...selected];
+    const ok = await konfirmasi({
+      title: "Hapus customer?",
+      text: `${ids.length} customer akan dihapus permanen dan tidak bisa dikembalikan.`,
+      yes: "Hapus", no: "Batal", danger: true
+    });
+    if (!ok || !alive) return;
+    setBusy(true);
+    try {
+      await commitChunks(ids, (b, id) => b.delete(doc(db, "customers", id)));
+      if (!alive) return;
+      dropItems(ids);
+      toast(`${ids.length} customer dihapus.`, "success");
+      selesaiSelect();
+    } catch (err) {
+      gagalAksi(err, ids);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Pilih pemilik baru: sheet daftar kurir & sales -> modal konfirmasi -> ubah field pemilik
+  function openMovePicker() {
+    if (actionBusy || !selected.size) return;
+    if (!users.length) { toast("Daftar kurir/sales belum dimuat.", "warning"); return; }
+    const { body } = makeSheet("Pindah pemilik");
+    body.innerHTML = `
+      <div class="cu-f-title">Pindahkan ke kurir / sales</div>
+      <div class="cu-opts">
+        ${users.map((u) => `
+          <button class="cu-opt" type="button" data-v="${esc(u.id)}">
+            <span class="cu-opt-text">
+              <span class="cu-opt-name">${esc(namaUser(u))}</span>
+              <span class="cu-opt-sub">${esc(u.role)}${u.status === false ? " · nonaktif" : ""}</span>
+            </span>
+          </button>`).join("")}
+      </div>`;
+    let picked = false;
+    body.addEventListener("click", async (e) => {
+      const b = e.target.closest(".cu-opt");
+      if (!b || picked) return;
+      const u = userMap.get(b.dataset.v);
+      if (!u) return;
+      picked = true;
+      const depth = layers.length - 1;
+      closeTop();
+      await waitLayers(depth);
+      if (alive) pindahPemilik(u);
+    });
+  }
+
+  async function pindahPemilik(u) {
+    if (actionBusy || !selected.size) return;
+    const ids = [...selected];
+    const ok = await konfirmasi({
+      title: "Pindah pemilik?",
+      text: `${ids.length} customer akan dipindahkan ke ${namaUser(u)} (${u.role}).`,
+      yes: "Pindahkan", no: "Batal", type: "info"
+    });
+    if (!ok || !alive) return;
+    setBusy(true);
+    try {
+      await commitChunks(ids, (b, id) => b.update(doc(db, "customers", id), { pemilik: u.id, updatedAt: serverTimestamp() }));
+      if (!alive) return;
+      const s = new Set(ids);
+      items.forEach((c) => { if (s.has(c.id)) c.pemilik = u.id; });
+      if (owner !== "all" && owner !== u.id) {
+        dropItems(ids);                                   // tidak lagi cocok dengan filter pemilik
+      } else {
+        items.forEach((c) => { if (s.has(c.id)) { const n = rowNode(c.id); if (n) n.outerHTML = cardHtml(c); } });
+        saveCache();
+      }
+      toast(`${ids.length} customer dipindahkan ke ${namaUser(u)}.`, "success");
+      selesaiSelect();
+    } catch (err) {
+      gagalAksi(err, ids);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   $("#cuOwner").addEventListener("click", openOwnerPicker);
 
   $("#cuSaldo").addEventListener("click", (e) => {
@@ -705,9 +951,12 @@ export function mount(el, ctx) {
   $("#cuMapAll").addEventListener("click", () => openMap(null));
 
   listEl.addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-act]");
+    if (lpFired) { lpFired = false; return; }
     const row = e.target.closest(".cu-item[data-id]");
-    if (!btn || !row) return;
+    if (!row) return;
+    if (selectMode) { toggleSel(row.dataset.id); return; }
+    const btn = e.target.closest("[data-act]");
+    if (!btn) return;
     const c = items.find((x) => x.id === row.dataset.id);
     if (!c) return;
     if (btn.dataset.act === "open") openSheet(c);
@@ -745,7 +994,7 @@ export function mount(el, ctx) {
     if (io) io.disconnect();
     window.removeEventListener("popstate", onPop);
     while (layers.length) popLayer();
-    document.querySelectorAll(".cu-sheet-wrap, .cu-map-wrap, .cu-mini-wrap").forEach((n) => n.remove());
+    document.querySelectorAll(".cu-sheet-wrap, .cu-map-wrap, .cu-mini-wrap, .cu-selbar").forEach((n) => n.remove());
     document.documentElement.classList.remove("cu-lock");
   };
 }

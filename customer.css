@@ -234,3 +234,43 @@ html.cu-lock, html.cu-lock body { overscroll-behavior-y: contain; }
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 .cu-mini-tel { font-size: 13px; font-weight: 600; color: var(--primary-dark); }
+
+/* ---------- Mode centang ---------- */
+.cu-item { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.cu-check {
+  display: none; flex-shrink: 0; width: 24px; height: 24px; align-self: center; margin-left: 12px;
+  border-radius: 50%; border: 2px solid var(--border); color: transparent;
+  place-items: center; font-size: 14px; font-weight: 800; line-height: 1;
+}
+.v-cu.selecting .cu-check { display: grid; }
+.cu-item.sel { background: var(--primary-light); }
+.cu-item.sel .cu-check { background: var(--primary); border-color: var(--primary); color: #fff; }
+.v-cu.selecting .cu-wabtn, .v-cu.selecting .cu-pinbtn { display: none; }
+.v-cu.selecting .cu-bar, .v-cu.selecting .cu-chips, .v-cu.selecting .cu-harga { opacity: .5; pointer-events: none; }
+
+.cu-selbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 120;
+  display: flex; align-items: center; gap: 8px;
+  padding: calc(10px + env(safe-area-inset-top)) 12px 10px;
+  background: var(--primary-dark); color: #fff; box-shadow: var(--shadow-sm);
+  transform: translateY(-100%); transition: transform .22s ease;
+}
+.cu-selbar.show { transform: none; }
+.cu-selbar.busy { opacity: .6; pointer-events: none; }
+.cu-sel-x {
+  flex-shrink: 0; width: 40px; height: 40px; border: 0; border-radius: 50%; cursor: pointer;
+  background: rgba(255, 255, 255, .18); color: #fff; display: grid; place-items: center;
+}
+.cu-sel-count { flex: 1; min-width: 0; font-weight: 700; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cu-sel-btn {
+  flex-shrink: 0; display: flex; align-items: center; gap: 6px; height: 40px; padding: 0 12px;
+  border: 0; border-radius: var(--radius-sm); cursor: pointer;
+  background: rgba(255, 255, 255, .18); color: #fff; font-weight: 700; font-size: 14px;
+}
+.cu-sel-btn:active { background: rgba(255, 255, 255, .32); }
+.cu-sel-btn.danger { background: var(--danger); }
+
+@media (max-width: 400px) {
+  .cu-sel-btn span { display: none; }
+  .cu-sel-btn { padding: 0; width: 40px; justify-content: center; }
+}
