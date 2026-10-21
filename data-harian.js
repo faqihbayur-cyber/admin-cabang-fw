@@ -1,7 +1,7 @@
 // data-harian.js — view Data Harian: laporan kurir/sales per hari
 import {
   collection, collectionGroup, query, where, getDocs, getDoc, doc,
-  writeBatch, serverTimestamp, getAggregateFromServer, sum
+  writeBatch, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { toast, alertBox } from "./ui.js";
 
@@ -191,25 +191,14 @@ export function mount(el, ctx) {
       collectionGroup(db, "dataHarian"), ...base, where("tanggal", "==", tanggal)
     ));
 
-    let closing = 0, omset = 0;
+    let closing = 0, omset = 0, hutangSaldo = 0;
     hariIni.forEach((d) => {
       const x = d.data();
       closing += num(x.pengisianGalon);
       omset += num(x.pembayaran);
+      hutangSaldo += num(x.keterangan);   // hutang / saldo sesuai tanggal saja
     });
     const repeat = hariIni.size;
-
-    // Hutang / saldo: jumlah seluruh keterangan (semua tanggal)
-    const qAll = query(collectionGroup(db, "dataHarian"), ...base);
-    let hutangSaldo = 0;
-    try {
-      const agg = await getAggregateFromServer(qAll, { total: sum("keterangan") });
-      hutangSaldo = num(agg.data().total);
-    } catch (e) {
-      console.warn("Aggregate gagal, pakai getDocs:", e);
-      const all = await getDocs(qAll);
-      all.forEach((d) => { hutangSaldo += num(d.data().keterangan); });
-    }
 
     return { closing, repeat, omset, hutangSaldo };
   }
@@ -383,7 +372,7 @@ export function mount(el, ctx) {
         <div class="dh-stat wide" id="dhHSCard">
           <span class="dh-stat-label" id="dhHSLabel">Hutang / Saldo</span>
           <span class="dh-stat-val" id="dhHS"></span>
-          <span class="dh-stat-note">akumulasi seluruh data</span>
+          <span class="dh-stat-note">jumlah keterangan sesuai tanggal</span>
         </div>
         <div class="dh-stat pos">
           <span class="dh-stat-label">Bonus</span>
