@@ -60,6 +60,7 @@
   padding: 2px 8px; border-radius: 99px; background: var(--primary-light); color: var(--primary-dark);
 }
 .ak-role.sales { background: #e0f7fa; color: #0e7490; }
+.ak-role.konsumen { background: #fef3c7; color: #92400e; }
 
 .ak-off-head {
   width: 100%; margin: 16px 0 8px; padding: 12px 14px; border: 1px dashed var(--border); border-radius: var(--radius-sm);

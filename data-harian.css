@@ -37,6 +37,7 @@
   padding: 2px 8px; border-radius: 99px; background: var(--primary-light); color: var(--primary-dark);
 }
 .dh-role.sales { background: #e0f7fa; color: #0e7490; }
+.dh-role.konsumen { background: #fef3c7; color: #92400e; }
 .dh-role.off { background: #fee2e2; color: var(--danger); }
 
 /* ---------- Detail ---------- */

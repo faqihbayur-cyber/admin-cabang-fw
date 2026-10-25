@@ -46,6 +46,11 @@ const ROUTES = {
     load: () => import("./cashflow.js"),
     icon: '<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>'
   },
+  "rekapitulasi": {
+    label: "Rekapitulasi",
+    load: () => import("./rekapitulasi.js"),
+    icon: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'
+  },
   "pengunjung": {
     label: "Pengunjung",
     load: () => import("./visitors.js"),

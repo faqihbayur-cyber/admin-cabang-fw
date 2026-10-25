@@ -1,0 +1,52 @@
+/* rekapitulasi.css — gerbang password + halaman rekapitulasi */
+.v-rk { display: flex; flex-direction: column; align-items: center; padding: 24px 0 32px; }
+
+.rk-box {
+  width: 100%; max-width: 380px; background: var(--surface); border-radius: var(--radius);
+  box-shadow: var(--shadow-sm); padding: 24px 20px; display: flex; flex-direction: column; gap: 14px; text-align: center;
+}
+.rk-box.wide { max-width: 720px; text-align: left; }
+.rk-box h2 { font-size: 20px; }
+.rk-sub { font-size: 14px; color: var(--text-muted); line-height: 1.5; }
+
+.rk-lock {
+  width: 60px; height: 60px; margin: 0 auto; border-radius: 50%;
+  background: var(--primary-light); color: var(--primary-dark); display: grid; place-items: center;
+}
+
+.rk-field { position: relative; }
+.rk-field input {
+  width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 13px 46px 13px 14px; font-size: 16px; color: var(--text); background: var(--surface);
+  outline: none; text-align: left;
+}
+.rk-field input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+.rk-field input:disabled { opacity: .6; }
+.rk-eye {
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  width: 40px; height: 40px; border: 0; background: transparent; color: var(--text-muted);
+  display: grid; place-items: center; cursor: pointer; border-radius: 50%;
+}
+
+.rk-err { min-height: 18px; font-size: 13px; color: var(--danger); font-weight: 600; }
+.rk-err:empty { min-height: 0; }
+
+.rk-btn {
+  width: 100%; border: 0; border-radius: var(--radius); padding: 14px;
+  background: var(--primary); color: #fff; font-weight: 700; font-size: 16px; cursor: pointer; min-height: 50px;
+}
+.rk-btn:active { background: var(--primary-dark); }
+.rk-btn:disabled { opacity: .55; cursor: not-allowed; }
+
+.rk-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.rk-lockbtn {
+  border: 0; border-radius: 99px; padding: 8px 16px; font-weight: 600; font-size: 13px; cursor: pointer;
+  background: var(--primary-light); color: var(--primary-dark);
+}
+.rk-empty { padding: 24px 8px; color: var(--text-muted); font-size: 14px; line-height: 1.5; text-align: center; }
+
+.rk-box.shake { animation: rkShake .35s; }
+@keyframes rkShake {
+  20% { transform: translateX(-8px); } 40% { transform: translateX(8px); }
+  60% { transform: translateX(-5px); } 80% { transform: translateX(5px); }
+}

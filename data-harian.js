@@ -1,11 +1,15 @@
 // data-harian.js — view Data Harian: laporan kurir/sales per hari
 import {
   collection, collectionGroup, query, where, getDocs, getDoc, doc,
-  writeBatch, serverTimestamp
+  writeBatch, serverTimestamp, getAggregateFromServer, sum
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { toast, alertBox } from "./ui.js";
 
 export const css = new URL("./data-harian.css", import.meta.url).href;
+
+// Di bawah BATAS_PCS galon, upah kurir dihitung per galon (closing x UPAH_PER_PCS), tanpa potongan & bonus.
+const BATAS_PCS = 30;
+const UPAH_PER_PCS = 1000;
 
 /* ---------- Helper ---------- */
 const nf = new Intl.NumberFormat("id-ID");
@@ -155,7 +159,7 @@ export function mount(el, ctx) {
         getDocs(query(
           collection(db, "users"),
           where("idCabang", "==", idCabang),
-          where("role", "in", ["kurir", "sales"])
+          where("role", "in", ["kurir", "sales", "konsumen"])
         )),
         getDoc(doc(db, "kantorCabang", idCabang))
       ]);
@@ -212,6 +216,7 @@ export function mount(el, ctx) {
 
   /* ===== DETAIL ===== */
   function showDetail(tanggal) {
+    if (sel?.role === "sales" || sel?.role === "konsumen") return showDetailSales(tanggal);   // closing manual (sales: jual lepas, konsumen: beli langsung)
     const token = ++loadToken;
     const u = sel;
     dirty = false;
@@ -283,8 +288,9 @@ export function mount(el, ctx) {
     const omset = state.omset || 0;
     const hppDistribusi = num(cabang?.hpp?.distribusi);
     const pembayaranProduksi = closing * hppDistribusi;
-    const bonus = hitungBonus(closing, cabang?.bonus);
-    const potongan = hitungPotongan(closing, cabang?.potongan);
+    const perPcs = closing < BATAS_PCS;
+    const bonus = perPcs ? 0 : hitungBonus(closing, cabang?.bonus);
+    const potongan = perPcs ? 0 : hitungPotongan(closing, cabang?.potongan);
     const kasDistribusi = omset - pembayaranProduksi - kasbon;   // boleh minus
 
     // hari kerja = jumlah hari pada bulan tanggal laporan dikurangi hari Minggu
@@ -295,16 +301,18 @@ export function mount(el, ctx) {
       for (let d = 1; d <= hariBulan; d++) if (new Date(y, m - 1, d).getDay() === 0) hariMinggu++;
     }
     const hariKerja = Math.max(hariBulan - hariMinggu, 1);
-    const upahKurir = num(cabang?.upahKurir);
-    const upahHarian = upahKurir / hariKerja;
+    const pokokBulanan = num(cabang?.upahKurir);
+    const upahHarian = pokokBulanan / hariKerja;
+    // upah kurir hari itu: per galon kalau closing di bawah batas, selain itu pokok harian - potongan + bonus
+    const upahKurir = Math.round(perPcs ? closing * UPAH_PER_PCS : upahHarian - potongan + bonus);
     const hargaJual = num(cabang?.hpp?.hargaJual);
     const pendapatan = closing * hargaJual;
-    const marginDistribusi = pendapatan - pembayaranProduksi - upahHarian + potongan - bonus;
+    const marginDistribusi = pendapatan - pembayaranProduksi - upahKurir;   // boleh minus
 
     return {
       bonus, potongan, kasbon,
       hppDistribusi, pembayaranProduksi, kasDistribusi,
-      hariBulan, hariMinggu, hariKerja, upahKurir, upahHarian, hargaJual, pendapatan, marginDistribusi
+      hariBulan, hariMinggu, hariKerja, pokokBulanan, upahHarian, upahKurir, perPcs, hargaJual, pendapatan, marginDistribusi
     };
   }
 
@@ -323,7 +331,7 @@ export function mount(el, ctx) {
     if (!cabang?.bonus?.ketentuan) add("warn", "Ketentuan bonus belum diatur di kantor cabang, bonus dihitung Rp 0.");
     if (!cabang?.potongan?.ketentuan) add("warn", "Ketentuan potongan belum diatur di kantor cabang, potongan dihitung Rp 0.");
     if (!num(cabang?.hpp?.hargaJual)) add("warn", "Harga jual belum diatur di kantor cabang (hpp.hargaJual), pendapatan margin dihitung Rp 0.");
-    if (!num(cabang?.upahKurir)) add("warn", "Upah kurir belum diatur di kantor cabang, margin distribusi dihitung tanpa upah kurir.");
+    if (!num(cabang?.upahKurir)) add("warn", "Gaji pokok kurir (upahKurir) belum diatur di kantor cabang, upah kurir dihitung Rp 0 untuk closing 30 galon ke atas.");
     if (!num(cabang?.hpp?.distribusi)) add("warn", "HPP distribusi belum diatur di kantor cabang, pembayaran produksi dihitung Rp 0.");
 
     if (state.repeat === 0) {
@@ -455,10 +463,14 @@ export function mount(el, ctx) {
     setVal("#dhPot", known ? 1 : null, rp(h.potongan));
 
     const b = cabang?.bonus, p = cabang?.potongan;
-    root.querySelector("#dhBonusInfo").textContent = b?.ketentuan
+    root.querySelector("#dhBonusInfo").textContent = h.perPcs
+      ? `Di bawah ${fmt(BATAS_PCS)} galon tidak ada bonus`
+      : b?.ketentuan
       ? `Target ${fmt(b.ketentuan)} galon · ${rp(num(b.klaim))} tiap kelipatan ${fmt(b.kelipatan)}`
       : "Ketentuan belum diatur";
-    root.querySelector("#dhPotInfo").textContent = p?.ketentuan
+    root.querySelector("#dhPotInfo").textContent = h.perPcs
+      ? `Di bawah ${fmt(BATAS_PCS)} galon upah per galon ${rp(UPAH_PER_PCS)}, tanpa potongan`
+      : p?.ketentuan
       ? `Di bawah ${fmt(p.ketentuan)} galon · ${rp(num(p.potonganUpah))} tiap kelipatan ${fmt(p.kelipatan)}`
       : "Ketentuan belum diatur";
 
@@ -497,6 +509,305 @@ export function mount(el, ctx) {
     }
   }
 
+  /* ===== SALES (jual lepas: closing & setoran diisi manual) ===== */
+  // Jumlah sisaBayar semua tanggal SEBELUM tanggal laporan (dari mirror users/{sales}/laporan)
+  async function hutangSebelumnya(uid, tanggal) {
+    const q = query(collection(db, "users", uid, "laporan"), where("tanggal", "<", tanggal));
+    try {
+      const agg = await getAggregateFromServer(q, { total: sum("sisaBayar") });
+      return num(agg.data().total);
+    } catch (err) {
+      console.warn("Agregasi gagal, hitung manual:", err);
+      const snap = await getDocs(q);
+      let t = 0;
+      snap.forEach((d) => { t += num(d.data().sisaBayar); });
+      return t;
+    }
+  }
+
+  const kons = () => sel?.role === "konsumen";   // konsumen = pembeli langsung di tempat produksi, bayar lunas
+
+  function showDetailSales(tanggal) {
+    const token = ++loadToken;
+    const u = sel;
+    dirty = false;
+
+    const c = cacheGet(`sdet:${u.id}:${tanggal}`);
+    state = c
+      ? { tanggal, sales: true, ready: false, ...c }
+      : { tanggal, sales: true, ready: false, closing: null, setoran: null, prevHutang: null, exists: null, savedAtMs: null };
+    renderDetailSales();
+
+    (async () => {
+      try {
+        const [saved, prev] = await Promise.all([
+          getDoc(adminRef(tanggal)),
+          u.role === "konsumen" ? Promise.resolve(0) : hutangSebelumnya(u.id, tanggal)
+        ]);
+        if (!alive || token !== loadToken) return;
+
+        const entry = saved.exists() ? (saved.data()[u.id] || null) : null;
+        const typed = dirty ? { closing: state.closing, setoran: state.setoran } : null;   // jangan timpa ketikan user
+        state = {
+          tanggal,
+          sales: true,
+          ready: true,
+          closing: typed ? typed.closing : (entry ? num(entry.closing) : 0),
+          setoran: typed ? typed.setoran : (entry ? num(entry.setoran) : 0),
+          prevHutang: prev,
+          exists: !!entry,
+          savedAtMs: entry?.updatedAt?.toMillis ? entry.updatedAt.toMillis() : null
+        };
+        cacheSet(`sdet:${u.id}:${tanggal}`, {
+          closing: state.closing, setoran: state.setoran, prevHutang: prev,
+          exists: state.exists, savedAtMs: state.savedAtMs
+        });
+
+        if (!dirty) {
+          const ci = root.querySelector("#dhSClosing"), si = root.querySelector("#dhSSetoran");
+          if (ci) ci.value = state.closing ? fmt(state.closing) : "";
+          if (si) si.value = state.setoran ? fmt(state.setoran) : "";
+        }
+        paintDetailSales();
+      } catch (err) {
+        console.error(err);
+        if (!alive || token !== loadToken) return;
+        toast("Gagal memuat laporan sales. Cek aturan Firestore / index.", "error", 4500);
+        const v = root.querySelector("#dhValid");
+        if (v) v.innerHTML = `<div class="dh-valid-title">Validasi data sebelum disimpan</div>
+          <div class="dh-v err"><span class="dh-v-ico">✕</span><span>Gagal memuat data. Simpan dinonaktifkan sampai data berhasil dimuat.</span></div>`;
+      }
+    })();
+  }
+
+  function hitungSales() {
+    const closing = state.closing || 0;
+    const setoran = state.setoran || 0;
+    // sales bayar per galon sesuai HPP distribusi, konsumen bayar sesuai harga jual (lunas)
+    const hppDistribusi = num(kons() ? cabang?.hpp?.hargaJual : cabang?.hpp?.distribusi);
+    const pembayaranProduksi = closing * hppDistribusi;          // yang harus dibayar
+    const sisaBayar = kons() ? 0 : pembayaranProduksi - setoran; // plus = masih hutang, minus = lebih bayar
+    const prev = state.prevHutang;
+    const totalHutang = prev === null || prev === undefined ? null : prev + sisaBayar;
+    return { closing, setoran, hppDistribusi, pembayaranProduksi, sisaBayar, totalHutang };
+  }
+
+  function validasiSales() {
+    const out = [];
+    const add = (level, text) => out.push({ level, text });
+    const h = hitungSales();
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(state.tanggal)) add("err", "Tanggal tidak valid.");
+    else add("ok", `Tanggal laporan ${tglIndo(state.tanggal)}.`);
+
+    if (!idCabang) add("err", "Akun admin belum punya idCabang.");
+
+    if (h.closing > 100000) add("err", "Closing terlalu besar, periksa kembali.");
+    else if (h.closing === 0) add("warn", "Closing 0 galon.");
+    else add("ok", `Closing ${fmt(h.closing)} galon.`);
+
+    if (kons()) {
+      if (!h.hppDistribusi) add("warn", "Harga jual belum diatur di kantor cabang (hpp.hargaJual), total bayar dihitung Rp 0.");
+    } else {
+      if (h.setoran > 1000000000) add("err", "Setoran terlalu besar, periksa kembali.");
+      else add("ok", h.setoran === 0 ? "Setoran kosong, disimpan sebagai Rp 0." : `Setoran ${rp(h.setoran)}.`);
+
+      if (!h.hppDistribusi) add("warn", "HPP distribusi belum diatur di kantor cabang, total bayar dihitung Rp 0.");
+    }
+    if (!kons() && h.sisaBayar < 0) add("info", `Setoran lebih besar ${rp(Math.abs(h.sisaBayar))} dari total bayar hari ini, kelebihannya mengurangi hutang.`);
+
+    if (state.exists) add("info", "Laporan ini sudah pernah disimpan. Menyimpan akan memperbarui dokumen yang ada.");
+    return out;
+  }
+
+  function renderDetailSales() {
+    root.innerHTML = `
+      ${detailHeader(sel, state.tanggal)}
+
+      <div class="dh-badge" id="dhBadge"></div>
+
+      <div class="dh-grid">
+        <div class="dh-stat wide">
+          <span class="dh-stat-label">${kons() ? "Pemasukan Hari Ini" : "Total Bayar"}</span>
+          <span class="dh-stat-val" id="dhSBayar"></span>
+          <span class="dh-stat-note" id="dhSBayarInfo"></span>
+        </div>
+        ${kons() ? "" : `
+        <div class="dh-stat wide" id="dhSSisaCard">
+          <span class="dh-stat-label">Sisa Bayar Hari Ini</span>
+          <span class="dh-stat-val" id="dhSSisa"></span>
+          <span class="dh-stat-note">total bayar − setoran</span>
+        </div>
+        <div class="dh-stat">
+          <span class="dh-stat-label">Hutang Sebelumnya</span>
+          <span class="dh-stat-val" id="dhSPrev"></span>
+          <span class="dh-stat-note">dari tanggal sebelumnya</span>
+        </div>
+        <div class="dh-stat" id="dhSTotalCard">
+          <span class="dh-stat-label" id="dhSTotalLabel">Total Hutang</span>
+          <span class="dh-stat-val" id="dhSTotal"></span>
+          <span class="dh-stat-note">sampai tanggal ini</span>
+        </div>`}
+      </div>
+
+      <div class="dh-form">
+        <h3>Input</h3>
+        <label for="dhSClosing">${kons() ? "Closing / galon dibeli konsumen hari ini" : "Closing / pengambilan (galon)"}</label>
+        <input id="dhSClosing" type="text" inputmode="numeric" autocomplete="off" placeholder="0" value="${state.closing ? fmt(state.closing) : ""}">
+        ${kons() ? "" : `
+        <label for="dhSSetoran" style="margin-top:12px">Setoran (Rp)</label>
+        <input id="dhSSetoran" type="text" inputmode="numeric" autocomplete="off" placeholder="0" value="${state.setoran ? fmt(state.setoran) : ""}">`}
+      </div>
+
+      <div class="dh-valid" id="dhValid"></div>
+
+      <button class="dh-save" id="dhSave" type="button" disabled>Simpan Laporan</button>
+    `;
+
+    root.querySelector("#dhBack").addEventListener("click", () => {
+      if (history.state && history.state.dh) history.back();
+      else showList();
+    });
+    const t = root.querySelector("#dhTanggal");
+    t.addEventListener("change", () => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(t.value)) return;
+      showDetail(t.value);
+    });
+
+    const bindNum = (id, key) => {
+      const inp = root.querySelector(id);
+      inp.addEventListener("input", () => {
+        dirty = true;
+        const raw = digits(inp.value);
+        inp.value = raw ? fmt(raw) : "";
+        state[key] = num(raw);
+        paintDetailSales();
+      });
+    };
+    bindNum("#dhSClosing", "closing");
+    if (!kons()) bindNum("#dhSSetoran", "setoran");
+    root.querySelector("#dhSave").addEventListener("click", simpanSales);
+
+    paintDetailSales();
+  }
+
+  function paintDetailSales() {
+    if (!state?.sales || !root.querySelector("#dhSClosing")) return;
+    const s = state;
+    const known = s.closing !== null && s.closing !== undefined;
+    const h = hitungSales();
+
+    setVal("#dhSBayar", known ? 1 : null, rp(h.pembayaranProduksi));
+    const namaHarga = kons() ? "harga jual" : "HPP distribusi";
+    root.querySelector("#dhSBayarInfo").textContent = h.hppDistribusi
+      ? `${fmt(h.closing)} galon × ${rp(h.hppDistribusi)} (${namaHarga})`
+      : `${namaHarga[0].toUpperCase() + namaHarga.slice(1)} belum diatur`;
+
+    if (!kons()) {
+      setVal("#dhSSisa", known ? 1 : null, rp(h.sisaBayar));
+      root.querySelector("#dhSSisaCard").className =
+        "dh-stat wide " + (!known ? "" : h.sisaBayar > 0 ? "neg" : h.sisaBayar < 0 ? "pos" : "");
+
+      const prevKnown = s.prevHutang !== null && s.prevHutang !== undefined;
+      setVal("#dhSPrev", prevKnown ? 1 : null, rp(s.prevHutang || 0));
+
+      const tot = known && prevKnown ? h.totalHutang : null;
+      setVal("#dhSTotal", tot === null ? null : 1, rp(Math.abs(tot || 0)));
+      root.querySelector("#dhSTotalLabel").textContent = tot === null ? "Total Hutang" : (tot < 0 ? "Lebih Bayar" : "Total Hutang");
+      root.querySelector("#dhSTotalCard").className = "dh-stat " + (tot === null ? "" : tot > 0 ? "neg" : tot < 0 ? "pos" : "");
+    }
+
+    const badge = root.querySelector("#dhBadge");
+    if (s.exists === null || s.exists === undefined) {
+      badge.className = "dh-badge skel"; badge.textContent = "";
+    } else if (s.exists) {
+      const ms = s.savedAtMs;
+      const waktu = ms ? " · " + new Date(ms).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "";
+      badge.className = "dh-badge saved";
+      badge.textContent = "✓ Sudah pernah disimpan" + waktu;
+    } else {
+      badge.className = "dh-badge new";
+      badge.textContent = "Belum disimpan";
+    }
+
+    const valid = root.querySelector("#dhValid");
+    const btn = root.querySelector("#dhSave");
+    if (s.ready) {
+      const v = validasiSales();
+      valid.innerHTML = `
+        <div class="dh-valid-title">Validasi data sebelum disimpan</div>
+        ${v.map((x) => `<div class="dh-v ${x.level}"><span class="dh-v-ico">${{ ok: "✓", warn: "!", err: "✕", info: "i" }[x.level]}</span><span>${esc(x.text)}</span></div>`).join("")}`;
+      btn.disabled = false;
+    } else {
+      valid.innerHTML = `
+        <div class="dh-valid-title">Validasi data sebelum disimpan</div>
+        <div class="skel" style="height:14px;width:80%"></div>
+        <div class="skel" style="height:14px;width:65%"></div>`;
+      btn.disabled = true;
+    }
+    btn.textContent = s.exists ? "Perbarui Laporan" : "Simpan Laporan";
+  }
+
+  async function simpanSales() {
+    if (!state?.ready || !state.sales) return;
+    const btn = root.querySelector("#dhSave");
+    const errs = validasiSales().filter((x) => x.level === "err");
+    if (errs.length) {
+      await alertBox({ title: "Data belum valid", text: errs.map((e) => "• " + e.text).join("\n"), type: "error" });
+      return;
+    }
+
+    const u = sel, s = state;
+    const h = hitungSales();
+    const payload = {
+      kurirUid: u.id,
+      kurirNama: namaUser(u),
+      kurirRole: u.role,
+      adminUid: admin.uid,
+      idCabang,
+      tanggal: s.tanggal,
+      closing: h.closing,
+      pembayaranProduksi: h.pembayaranProduksi,   // konsumen: closing x harga jual
+      updatedAt: serverTimestamp()
+    };
+    if (!kons()) { payload.setoran = h.setoran; payload.sisaBayar = h.sisaBayar; }
+    if (!s.exists) payload.createdAt = serverTimestamp();
+
+    btn.disabled = true;
+    const label = btn.textContent;
+    btn.innerHTML = `<span class="spinner"></span>`;
+
+    try {
+      const batch = writeBatch(db);
+      batch.set(adminRef(s.tanggal), {
+        tanggal: s.tanggal,
+        adminUid: admin.uid,
+        idCabang,
+        updatedAt: serverTimestamp(),
+        [u.id]: payload
+      }, { merge: true });
+      batch.set(mirrorRef(u.id, s.tanggal), payload, { merge: true });
+      await batch.commit();
+      if (!alive) return;
+
+      state = { ...s, exists: true, savedAtMs: Date.now() };
+      cacheSet(`sdet:${u.id}:${s.tanggal}`, {
+        closing: h.closing, setoran: h.setoran, prevHutang: s.prevHutang,
+        exists: true, savedAtMs: state.savedAtMs
+      });
+      toast(s.exists ? "Laporan diperbarui." : "Laporan tersimpan.", "success");
+      paintDetailSales();
+    } catch (err) {
+      console.error(err);
+      if (!alive) return;
+      btn.disabled = false;
+      btn.textContent = label;
+      toast(err?.code === "permission-denied"
+        ? "Ditolak aturan Firestore. Pastikan rules sudah diperbarui."
+        : "Gagal menyimpan laporan.", "error", 4500);
+    }
+  }
+
   /* ===== SIMPAN ===== */
   async function simpan() {
     if (!state?.ready) return;
@@ -529,6 +840,7 @@ export function mount(el, ctx) {
       omset: s.omset,
       pembayaranProduksi: h.pembayaranProduksi,
       kasDistribusi: h.kasDistribusi,
+      upahKurir: h.upahKurir,
       marginDistribusi: h.marginDistribusi,
       hutangSaldo: s.hutangSaldo,
       bonus: h.bonus,

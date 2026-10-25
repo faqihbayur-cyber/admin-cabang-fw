@@ -11,7 +11,8 @@ import { toast, alertBox } from "./ui.js";
 export const css = new URL("./akun.css", import.meta.url).href;
 
 /* ---------- Konstanta ---------- */
-const ROLES = ["sales", "kurir"];
+const ROLES = ["sales", "kurir", "konsumen"];
+// konsumen = satu akun bersama untuk pembeli yang datang langsung ke tempat produksi (tanpa login, hanya nama)
 const MAX_FOTO = 200 * 1024;      // batas panjang string base64 (≈150 KB file asli)
 
 /* ---------- Helper ---------- */
@@ -172,6 +173,7 @@ export function mount(el, ctx) {
           <button type="button" class="ak-chip on" data-f="all">Semua</button>
           <button type="button" class="ak-chip" data-f="sales">Sales</button>
           <button type="button" class="ak-chip" data-f="kurir">Kurir</button>
+          <button type="button" class="ak-chip" data-f="konsumen">Konsumen</button>
         </div>
       </div>
       <div id="akList"></div>
@@ -190,7 +192,7 @@ export function mount(el, ctx) {
         <span class="ak-item-name">${esc(namaUser(u))}</span>
         <span class="ak-item-sub">
           <span class="ak-role ${esc(u.role)}">${esc(u.role)}</span>
-          <span class="ak-item-mail">${esc(u.email)}</span>
+          <span class="ak-item-mail">${esc(u.role === "konsumen" ? "tanpa login" : u.email)}</span>
         </span>
       </span>
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
@@ -343,10 +345,13 @@ export function mount(el, ctx) {
         </div>
       </div>
       <div class="ak-rows">
+        ${u.role === "konsumen" ? `
+        <div class="ak-row"><span>Login</span><b>Tanpa login</b></div>
+        <div class="ak-row"><span>Dipakai untuk</span><b>Pembeli langsung di tempat produksi</b></div>` : `
         <div class="ak-row"><span>Email</span><b>${esc(u.email || "-")}</b></div>
         <div class="ak-row"><span>Alamat</span><b>${esc(u.alamat || "-")}</b></div>
         <div class="ak-row"><span>Tanggal lahir</span><b>${esc(tglIndo(u.tglLahir))}</b></div>
-        <div class="ak-row"><span>NIK</span><b>${esc(u.nik || "-")}</b></div>
+        <div class="ak-row"><span>NIK</span><b>${esc(u.nik || "-")}</b></div>`}
         <div class="ak-row"><span>Dibuat</span><b>${esc(waktuIndo(u.createdAtMs))}</b></div>
       </div>
       <div class="ak-actions">
@@ -363,8 +368,8 @@ export function mount(el, ctx) {
     if (busy) return;
     const target = !u.status;
     const ok = await konfirmasi(target
-      ? { title: "Aktifkan akun?", text: `${namaUser(u)} bisa login dan bekerja lagi.`, ok: "Aktifkan" }
-      : { title: "Nonaktifkan akun?", text: `${namaUser(u)} tidak akan bisa mengakses data sampai diaktifkan lagi.`, ok: "Nonaktifkan", danger: true });
+      ? { title: "Aktifkan akun?", text: u.role === "konsumen" ? `${namaUser(u)} bisa dipilih lagi di Data Harian.` : `${namaUser(u)} bisa login dan bekerja lagi.`, ok: "Aktifkan" }
+      : { title: "Nonaktifkan akun?", text: u.role === "konsumen" ? `${namaUser(u)} tidak akan muncul untuk input Data Harian sampai diaktifkan lagi.` : `${namaUser(u)} tidak akan bisa mengakses data sampai diaktifkan lagi.`, ok: "Nonaktifkan", danger: true });
     if (!ok || !alive) return;
 
     busy = true;
@@ -400,7 +405,7 @@ export function mount(el, ctx) {
     b.innerHTML = `
       <div class="ak-f-title">${edit ? "Edit Akun" : "Tambah Akun"}</div>
 
-      <div class="ak-photo">
+      <div class="ak-photo" data-full>
         <div id="akPhotoPrev"></div>
         <div class="ak-photo-side">
           <button class="ak-btn small" type="button" id="akPick">Pilih dari galeri</button>
@@ -420,26 +425,27 @@ export function mount(el, ctx) {
       <div class="ak-field">
         <label for="akNama">Nama</label>
         <input id="akNama" type="text" maxlength="100" autocomplete="off" value="${edit ? esc(u.nama) : ""}">
+        <small class="ak-hint ak-hidden" id="akKonsHint">Akun konsumen tanpa login, dipakai untuk mencatat pembelian langsung di tempat produksi. Hanya satu per cabang.</small>
       </div>
-      <div class="ak-field">
+      <div class="ak-field" data-full>
         <label for="akAlamat">Alamat</label>
         <textarea id="akAlamat" rows="3" maxlength="300">${edit ? esc(u.alamat) : ""}</textarea>
       </div>
-      <div class="ak-field">
+      <div class="ak-field" data-full>
         <label for="akTgl">Tanggal lahir</label>
         <input id="akTgl" type="date" max="${todayStr()}" value="${edit ? esc(u.tglLahir) : ""}">
       </div>
-      <div class="ak-field">
+      <div class="ak-field" data-full>
         <label for="akNik">NIK (16 digit)</label>
         <input id="akNik" type="text" inputmode="numeric" maxlength="16" autocomplete="off" value="${edit ? esc(u.nik) : ""}">
       </div>
-      <div class="ak-field">
+      <div class="ak-field" data-full>
         <label for="akEmail">Email</label>
         <input id="akEmail" type="email" autocomplete="off"${edit ? " readonly" : ""} value="${edit ? esc(u.email) : ""}">
         ${edit ? `<small class="ak-hint">Email tidak bisa diubah.</small>` : ""}
       </div>
       ${edit ? "" : `
-      <div class="ak-field">
+      <div class="ak-field" data-full>
         <label for="akPass">Password</label>
         <div class="ak-pass">
           <input id="akPass" type="password" autocomplete="new-password" placeholder="Minimal 6 karakter">
@@ -484,11 +490,24 @@ export function mount(el, ctx) {
       paintFoto();
     });
 
+    // konsumen: hanya nama (tanpa foto, alamat, tanggal lahir, NIK, email, password)
+    function sesuaikanRole() {
+      const k = role === "konsumen";
+      b.querySelectorAll("[data-full]").forEach((n) => n.classList.toggle("ak-hidden", k));
+      $("#akKonsHint").classList.toggle("ak-hidden", !k);
+    }
+    sesuaikanRole();
+
     $("#akRole").addEventListener("click", (e) => {
       const btn = e.target.closest(".ak-seg-btn");
       if (!btn || edit) return;
+      if (btn.dataset.r === "konsumen" && users.some((x) => x.role === "konsumen")) {
+        toast("Akun konsumen sudah ada di cabang ini.", "warning", 3500);
+        return;
+      }
       role = btn.dataset.r;
       b.querySelectorAll(".ak-seg-btn").forEach((x) => x.classList.toggle("on", x === btn));
+      sesuaikanRole();
     });
 
     const eye = $("#akEye");
@@ -512,6 +531,48 @@ export function mount(el, ctx) {
       if (i) { i.classList.add("invalid"); i.focus(); }
     }
 
+    // Akun konsumen: tanpa Firebase Auth, id dokumen tetap `konsumen_{idCabang}` (jadi hanya satu per cabang)
+    async function simpanKonsumen(nama) {
+      busy = true;
+      const btn = $("#akSave");
+      const label = btn.textContent;
+      btn.disabled = true;
+      btn.innerHTML = `<span class="spinner"></span>`;
+      const reset = () => { busy = false; btn.disabled = false; btn.textContent = label; };
+      try {
+        if (edit) {
+          await updateDoc(doc(db, "users", u.id), { nama, updatedAt: serverTimestamp() });
+          const baru = { ...u, nama };
+          simpanLokal(baru);
+          toast("Perubahan tersimpan.", "success");
+          busy = false;
+          if (sheetEl) showDetail(baru);
+          return;
+        }
+
+        const id = `konsumen_${idCabang}`;
+        if (users.some((x) => x.role === "konsumen")) { reset(); return gagal(null, "Akun konsumen sudah ada di cabang ini."); }
+
+        await setDoc(doc(db, "users", id), {
+          id, role: "konsumen", nama, idCabang, status: true, createdAt: serverTimestamp()
+        });
+        const baru = {
+          id, role: "konsumen", nama, alamat: "", tglLahir: "", nik: "", email: "", foto: "",
+          idCabang, status: true, createdAtMs: Date.now()
+        };
+        simpanLokal(baru);
+        toast("Akun konsumen dibuat.", "success");
+        busy = false;
+        if (sheetEl) showDetail(baru);
+      } catch (err) {
+        console.error(err);
+        reset();
+        toast(err?.code === "permission-denied"
+          ? "Ditolak aturan Firestore (rules belum diperbarui, atau akun konsumen sudah ada)."
+          : "Gagal menyimpan. Coba lagi.", "error", 4500);
+      }
+    }
+
     async function simpan() {
       if (busy) return;
 
@@ -525,6 +586,7 @@ export function mount(el, ctx) {
       if (!idCabang) return gagal(null, "Akun admin belum punya idCabang.");
       if (!ROLES.includes(role)) return gagal(null, "Role tidak valid.");
       if (nama.length < 2) return gagal("#akNama", "Nama minimal 2 karakter.");
+      if (role === "konsumen") return simpanKonsumen(nama);
       if (alamat.length < 3) return gagal("#akAlamat", "Alamat wajib diisi.");
       if (!/^\d{4}-\d{2}-\d{2}$/.test(tglLahir) || tglLahir > todayStr()) return gagal("#akTgl", "Tanggal lahir tidak valid.");
       if (!/^\d{16}$/.test(nik)) return gagal("#akNik", "NIK harus 16 digit angka.");
