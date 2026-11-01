@@ -204,7 +204,22 @@ export function mount(el, ctx) {
     });
     const repeat = hariIni.size;
 
-    return { closing, repeat, omset, hutangSaldo };
+    // Daftar pelanggan repeat: nama dari dokumen dataHarian, kalau kosong ambil dari dokumen induknya
+    const namaPel = (x) => x.namaPelanggan || x.namaCustomer || x.pelanggan || x.customer || x.nama || x.name || "";
+    const repeatList = await Promise.all(hariIni.docs.map(async (d) => {
+      const x = d.data();
+      let nama = namaPel(x);
+      if (!nama) {
+        try {
+          const par = d.ref.parent.parent;
+          if (par) { const ps = await getDoc(par); if (ps.exists()) nama = namaPel(ps.data()); }
+        } catch { /* abaikan */ }
+      }
+      return { nama: String(nama || "(tanpa nama)"), galon: num(x.pengisianGalon), bayar: num(x.pembayaran), ket: num(x.keterangan) };
+    }));
+    repeatList.sort((a, b) => a.nama.localeCompare(b.nama, "id"));
+
+    return { closing, repeat, omset, hutangSaldo, repeatList };
   }
 
   // Satu dokumen per tanggal: users/{admin}/laporanAdmin/{tanggal}
@@ -248,6 +263,7 @@ export function mount(el, ctx) {
         };
         cacheSet(`det:${u.id}:${tanggal}`, {
           closing: data.closing, repeat: data.repeat, omset: data.omset, hutangSaldo: data.hutangSaldo,
+          repeatList: data.repeatList,
           exists: state.exists, kasbon: state.kasbon, savedAtMs: state.savedAtMs
         });
 
@@ -358,11 +374,11 @@ export function mount(el, ctx) {
           <span class="dh-stat-val" id="dhClosing"></span>
           <span class="dh-stat-note">galon diisi</span>
         </div>
-        <div class="dh-stat">
+        <button class="dh-stat dh-stat-btn" type="button" id="dhRepeatCard">
           <span class="dh-stat-label">Pelanggan Repeat</span>
           <span class="dh-stat-val" id="dhRepeat"></span>
-          <span class="dh-stat-note">pelanggan</span>
-        </div>
+          <span class="dh-stat-note">pelanggan · ketuk lihat nama</span>
+        </button>
         <div class="dh-stat wide">
           <span class="dh-stat-label">Omset</span>
           <span class="dh-stat-val" id="dhOmset"></span>
@@ -423,8 +439,52 @@ export function mount(el, ctx) {
       paintDetail();
     });
     root.querySelector("#dhSave").addEventListener("click", simpan);
+    root.querySelector("#dhRepeatCard").addEventListener("click", bukaRepeat);
 
     paintDetail();
+  }
+
+  /* ===== MODAL PELANGGAN REPEAT ===== */
+  let modalEl = null;
+
+  function tutupRepeat() {
+    if (!modalEl) return;
+    if (history.state && history.state.dhModal) history.back();   // onPop yang menutup
+    else { modalEl.remove(); modalEl = null; }
+  }
+
+  function bukaRepeat() {
+    if (!state || modalEl) return;
+    if (!state.ready && !state.repeatList) { toast("Data masih dimuat, coba sebentar lagi.", "info"); return; }
+    const list = state.repeatList || [];
+
+    modalEl = document.createElement("div");
+    modalEl.className = "dh-modal";
+    modalEl.innerHTML = `
+      <div class="dh-modal-sheet" role="dialog" aria-modal="true" aria-label="Pelanggan repeat">
+        <div class="dh-modal-head">
+          <div>
+            <h3>Pelanggan Repeat</h3>
+            <p>${esc(tglIndo(state.tanggal))} · ${fmt(list.length)} pelanggan</p>
+          </div>
+          <button class="dh-modal-close" type="button" aria-label="Tutup">✕</button>
+        </div>
+        <div class="dh-modal-body">
+          ${list.length ? list.map((x, i) => `
+            <div class="dh-rp-item${x.ket < 0 ? " hutang" : ""}">
+              <span class="dh-rp-no">${i + 1}</span>
+              <span class="dh-rp-main">
+                <span class="dh-rp-name">${esc(x.nama)}</span>
+                <span class="dh-rp-sub">${fmt(x.galon)} galon · ${rp(x.bayar)}${x.ket < 0 ? ` · Hutang ${rp(Math.abs(x.ket))}` : ""}</span>
+              </span>
+            </div>`).join("") : `<div class="dh-empty">Belum ada pelanggan repeat pada tanggal ini.</div>`}
+        </div>
+      </div>`;
+    document.body.appendChild(modalEl);
+    history.pushState({ dhModal: true }, "");   // tombol back Android -> tutup modal
+
+    modalEl.addEventListener("click", (e) => { if (e.target === modalEl) tutupRepeat(); });
+    modalEl.querySelector(".dh-modal-close").addEventListener("click", tutupRepeat);
   }
 
   const setVal = (id, v, text) => {
@@ -871,6 +931,7 @@ export function mount(el, ctx) {
       state = { ...s, exists: true, kasbon: kasbonVal, savedAtMs: Date.now() };
       cacheSet(`det:${u.id}:${s.tanggal}`, {
         closing: s.closing, repeat: s.repeat, omset: s.omset, hutangSaldo: s.hutangSaldo,
+        repeatList: s.repeatList,
         exists: true, kasbon: kasbonVal, savedAtMs: state.savedAtMs
       });
       toast(s.exists ? "Laporan diperbarui." : "Laporan tersimpan.", "success");
@@ -889,6 +950,7 @@ export function mount(el, ctx) {
   // Tombol back (Android / browser): detail -> daftar, tanpa keluar halaman
   const onPop = (e) => {
     if (!alive) return;
+    if (modalEl) { modalEl.remove(); modalEl = null; return; }   // back menutup modal saja
     const id = e.state && e.state.dh;
     if (id) {
       const u = users.find((x) => x.id === id);
@@ -905,6 +967,7 @@ export function mount(el, ctx) {
 
   return () => {
     alive = false;
+    if (modalEl) { modalEl.remove(); modalEl = null; }
     window.removeEventListener("popstate", onPop);
   };
 }
