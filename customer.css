@@ -40,7 +40,7 @@
 }
 
 /* ---------- KPI ---------- */
-.cu-kpi { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.cu-kpi { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .cu-kpi-card {
   display: flex; align-items: baseline; gap: 8px; background: var(--surface);
   border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 10px 16px;
@@ -48,7 +48,11 @@
 .cu-kpi-num { font-size: 24px; font-weight: 800; color: var(--primary-dark); min-width: 28px; }
 .cu-kpi-num.skel { display: inline-block; height: 26px; width: 48px; }
 .cu-kpi-lbl { font-size: 13px; color: var(--text-muted); font-weight: 600; }
-.cu-kpi-note { font-size: 12px; color: var(--text-muted); }
+.cu-kpi-card.hutang .cu-kpi-num { color: var(--danger); }
+.cu-kpi-card.saldo .cu-kpi-num { color: #166534; }
+.cu-kpi-card { padding: 8px 12px; }
+.cu-kpi-num { font-size: 20px; }
+.cu-kpi-note { font-size: 12px; color: var(--text-muted); margin-left: auto; }
 
 /* ---------- List ---------- */
 .cu-list { display: flex; flex-direction: column; gap: 10px; }

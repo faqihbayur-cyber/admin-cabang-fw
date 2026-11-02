@@ -1,7 +1,7 @@
 // customer.js — view Customer: list (10 per halaman, scroll otomatis), filter, KPI, edit, peta Leaflet
 import {
   collection, query, where, orderBy, limit, startAfter,
-  getDocs, getCountFromServer, doc, updateDoc, writeBatch, serverTimestamp
+  getDocs, getCountFromServer, getAggregateFromServer, sum, count, doc, updateDoc, writeBatch, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { toast, confirmBox } from "./ui.js";
 import { esc, fmt, rp, num, kb, createIdb, kompresFoto, MAX_FOTO } from "./lib.js";
@@ -82,6 +82,7 @@ export function mount(el, ctx) {
   let hasMore = false;
   let loading = false;
   let total = null;
+  let stat = null;               // { galon, nominal } hasil agregat server (null = belum ada / gagal)
   let token = 0;
   let hargaTimer = 0;
   let io = null;
@@ -151,23 +152,40 @@ export function mount(el, ctx) {
     };
   }
 
+  // jumlah customer + total galon (+ total hutang/saldo sesuai chip). Kalau agregat sum gagal
+  // (mis. index belum ada) tetap kembalikan jumlah customer saja.
   async function fetchCount() {
-    const snap = await getCountFromServer(query(collection(db, "customers"), ...conds()));
-    return snap.data().count;
+    const q = query(collection(db, "customers"), ...conds());
+    const spec = { n: count(), galon: sum("jumlahGalon") };
+    if (saldoF === "hutang") spec.nominal = sum("hutang");
+    if (saldoF === "saldo") spec.nominal = sum("saldo");
+    try {
+      const d = (await getAggregateFromServer(q, spec)).data();
+      return { n: d.n, stat: { galon: d.galon || 0, nominal: d.nominal ?? null } };
+    } catch (err) {
+      console.error(err);
+      const snap = await getCountFromServer(q);
+      return { n: snap.data().count, stat: null };
+    }
   }
 
   const saveCache = () => idb.set(cacheKey(), {
     items: items.slice(0, PAGE).map((c) => ({ ...c, foto: "" })),   // foto tidak ikut cache (berat)
-    total
+    total, stat
   });
 
   /* ===== KPI ===== */
   function paintKpi() {
+    const card = (val, lbl, cls = "") => `
+      <div class="cu-kpi-card ${cls}">
+        <span class="cu-kpi-num${val === null && total === null ? " skel" : ""}">${val === null ? (total === null ? "" : "-") : val}</span>
+        <span class="cu-kpi-lbl">${lbl}</span>
+      </div>`;
+    const nominalLbl = saldoF === "hutang" ? "total hutang" : "total saldo";
     kpiEl.innerHTML = `
-      <div class="cu-kpi-card">
-        <span class="cu-kpi-num${total === null ? " skel" : ""}">${total === null ? "" : fmt(total)}</span>
-        <span class="cu-kpi-lbl">customer</span>
-      </div>
+      ${card(total === null ? null : fmt(total), "customer")}
+      ${card(stat ? fmt(stat.galon) : null, "galon")}
+      ${saldoF !== "all" ? card(stat && stat.nominal !== null ? rp(stat.nominal) : null, nominalLbl, saldoF) : ""}
       <div class="cu-kpi-note">${items.length ? `${fmt(items.length)} dimuat` : ""}</div>`;
   }
 
@@ -187,6 +205,7 @@ export function mount(el, ctx) {
             <span class="cu-item-name">${esc(c.nama || "(tanpa nama)")}</span>
             <span class="cu-item-sub">${esc(c.telp || "-")} · ${rp(c.harga)}</span>
             <span class="cu-tags">
+              <span class="cu-tag">${fmt(c.galon)} galon</span>
               ${c.hutang > 0 ? `<span class="cu-tag hutang">Hutang ${rp(c.hutang)}</span>` : ""}
               ${c.saldo > 0 ? `<span class="cu-tag saldo">Saldo ${rp(c.saldo)}</span>` : ""}
               ${c.status ? "" : `<span class="cu-tag off">Nonaktif</span>`}
@@ -261,7 +280,7 @@ export function mount(el, ctx) {
 
   async function reload() {
     const my = ++token;
-    loading = false; hasMore = false; lastDoc = null; items = []; total = null;
+    loading = false; hasMore = false; lastDoc = null; items = []; total = null; stat = null;
     paintKpi();
 
     if (!idCabang) {
@@ -272,7 +291,7 @@ export function mount(el, ctx) {
     const cached = await idb.get(cacheKey());
     if (!alive || my !== token) return;
     if (cached?.items?.length) {
-      items = cached.items; total = cached.total ?? null;
+      items = cached.items; total = cached.total ?? null; stat = cached.stat ?? null;
       paintKpi(); paintList();
     } else {
       skeleton();
@@ -281,7 +300,7 @@ export function mount(el, ctx) {
     try {
       const [page, cnt] = await Promise.all([fetchPage(null), fetchCount()]);
       if (!alive || my !== token) return;
-      items = page.rows; lastDoc = page.last; hasMore = page.full; total = cnt;
+      items = page.rows; lastDoc = page.last; hasMore = page.full; total = cnt.n; stat = cnt.stat;
       saveCache();
       paintKpi(); paintList();
     } catch (err) {
@@ -550,7 +569,7 @@ export function mount(el, ctx) {
         toast("Perubahan tersimpan.", "success");
         sheetBusy = false;
         closeTop();
-        fetchCount().then((n) => { if (alive) { total = n; paintKpi(); } }).catch(() => {});
+        fetchCount().then((r) => { if (alive) { total = r.n; stat = r.stat; paintKpi(); } }).catch(() => {});
       } catch (err) {
         console.error(err);
         sheetBusy = false;
@@ -831,7 +850,7 @@ export function mount(el, ctx) {
     ids.forEach((id) => { const n = rowNode(id); if (n) n.remove(); });
     saveCache();
     paintKpi();
-    fetchCount().then((n) => { if (alive) { total = n; paintKpi(); } }).catch(() => {});
+    fetchCount().then((r) => { if (alive) { total = r.n; stat = r.stat; paintKpi(); } }).catch(() => {});
     if (!items.length) { if (hasMore) loadMore(); else paintList(); } else paintFoot();
   }
 
