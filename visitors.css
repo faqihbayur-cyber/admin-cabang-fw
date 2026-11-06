@@ -40,3 +40,26 @@ td.vs-bar b { position: relative; }
 
 .vs-hint { font-size: 12px; color: var(--text-muted); line-height: 1.5; padding: 0 4px; }
 .vs-empty { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 28px 18px; text-align: center; color: var(--text-muted); font-size: 14px; }
+
+.vs-sec { font-size: 13px; font-weight: 700; color: var(--primary-dark); padding: 6px 4px 0; }
+#vsPromo td.vs-date small { display: block; margin-top: 2px; }
+
+.kd-row { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.kd-row:last-child { border-bottom: 0; }
+.kd-i { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.kd-i b { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kd-i small { font-size: 11px; color: var(--text-muted); }
+.kd-sw, .kd-ed, .kd-add, .kd-btn button {
+  border: 0; cursor: pointer; border-radius: 999px; padding: 8px 14px; font-size: 13px; font-weight: 700;
+  background: var(--primary-light); color: var(--primary-dark);
+}
+.kd-sw.on { background: #dcfce7; color: #166534; }
+.kd-sw.off { background: var(--bg); color: var(--text-muted); }
+.kd-sw:disabled, .kd-btn button:disabled { opacity: .5; cursor: default; }
+.kd-add { align-self: flex-start; }
+.kd-form { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.kd-form label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: var(--text-muted); }
+.kd-form input { font: inherit; font-size: 15px; font-weight: 500; color: var(--text); padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.kd-form input[readonly] { background: var(--bg); }
+.kd-btn { display: flex; gap: 8px; justify-content: flex-end; }
+.kd-btn .pri { background: var(--primary); color: #fff; }
