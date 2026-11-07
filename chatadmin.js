@@ -14,6 +14,7 @@ import { toast, confirmBox } from "./ui.js";
 export const css = new URL("./chatadmin.css", import.meta.url).href;
 
 const SITE_KEY = "6LfU2xQuAAAAANTKwl3Nh38L2P4qHkP3VAjET6p-"; // reCAPTCHA Enterprise (App Check)
+const VAPID = "BIM_grMV1aJktQboW2T216jLrMvQPddngtAZCeTE4vO_l56iB5Mis_d2IJr1UeqLIJ5AMHr72tqHqqvd7SSEiiI"; // kunci publik Web Push (FCM)
 const REGION = "asia-southeast2";
 const BULAN = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 const p2 = (n) => String(n).padStart(2, "0");
@@ -67,6 +68,38 @@ export function mount(el, ctx) {
   const fns = getFunctions(app, REGION);
   const call = (n, d) => httpsCallable(fns, n)(d || {});
 
+  /* ---------- notifikasi push perangkat admin ---------- */
+  const pushOk = () => ("serviceWorker" in navigator) && ("PushManager" in window) && ("Notification" in window);
+  const iosTanpa = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !("Notification" in window);
+  async function daftarToken() {
+    const reg = await navigator.serviceWorker.ready;
+    const M = await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging.js");
+    if (!(await M.isSupported())) return false;
+    const token = await M.getToken(M.getMessaging(app), { vapidKey: VAPID, serviceWorkerRegistration: reg });
+    if (!token) return false;
+    await call("daftarPush", { token });
+    return true;
+  }
+  function pushHtml() {
+    if (pushOk()) {
+      if (Notification.permission === "default") return `<div class="ch-push"><p>Aktifkan notifikasi supaya chat baru tetap masuk walau aplikasi ditutup.</p><button type="button" data-a="push">Aktifkan notifikasi</button></div>`;
+      if (Notification.permission === "denied") return `<div class="ch-push"><p>Notifikasi diblokir di browser ini. Buka pengaturan situs, lalu izinkan notifikasi.</p></div>`;
+      return "";
+    }
+    if (iosTanpa()) return `<div class="ch-push"><p>Untuk notifikasi di iPhone, pasang web ini ke Layar Utama lewat tombol Bagikan, lalu buka dari ikonnya.</p></div>`;
+    return "";
+  }
+  async function aktifkanPush() {
+    try {
+      const izin = Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
+      if (izin !== "granted") toast("Izin notifikasi tidak diberikan.", "warning");
+      else if (await daftarToken()) toast("Notifikasi aktif di perangkat ini.", "success");
+      else toast("Perangkat ini belum mendukung notifikasi.", "warning");
+    } catch (e) { console.error(e); toast("Gagal mengaktifkan notifikasi.", "error"); }
+    paintList();
+  }
+  if (pushOk() && Notification.permission === "granted") daftarToken().catch(() => {});
+
   el.innerHTML = `
     <section class="ch" id="chRoot">
       <div class="ch-list" id="chList"></div>
@@ -84,6 +117,9 @@ export function mount(el, ctx) {
       .filter(([, c]) => (filter === "tutup") === (c.status === "closed"))
       .sort((a, b) => ((b[1].updatedAt && b[1].updatedAt.toMillis && b[1].updatedAt.toMillis()) || 0) - ((a[1].updatedAt && a[1].updatedAt.toMillis && a[1].updatedAt.toMillis()) || 0));
     const un = unreadTotal();
+    try {
+      if ("setAppBadge" in navigator) { const r = un > 0 ? navigator.setAppBadge(un) : navigator.clearAppBadge(); if (r && r.catch) r.catch(() => {}); }
+    } catch (e) { /* badge tidak didukung */ }
     const rows = arr.map(([uid, c]) => `
       <button type="button" class="ch-item${uid === sel ? " on" : ""}" data-uid="${esc(uid)}">
         <div class="ch-i1"><b>${esc(nama(c, uid))}</b><span>${esc(waktu(c.updatedAt))}</span></div>
@@ -93,6 +129,7 @@ export function mount(el, ctx) {
       </button>`).join("");
     listEl.innerHTML = `
       <div class="ch-top"><b>Chat pelanggan</b><span>${un > 0 ? un + " belum dibaca" : "semua terbaca"}</span></div>
+      ${pushHtml()}
       <div class="ch-tabs">
         <button type="button" data-f="aktif" class="${filter === "aktif" ? "on" : ""}">Aktif</button>
         <button type="button" data-f="tutup" class="${filter === "tutup" ? "on" : ""}">Ditutup</button>
@@ -154,7 +191,7 @@ export function mount(el, ctx) {
     const box = $("#chMsgs");
     const dekat = box.scrollHeight - box.scrollTop - box.clientHeight < 90;
     box.innerHTML = msgs.map((m) => `
-      <div class="ch-m ${m.from === "admin" ? "ad" : "pg"}">${m.tipe === "order" ? "📍 " : ""}${esc(m.text)}<small>${esc(waktu(m.createdAt, true))}</small></div>`).join("")
+      <div class="ch-m ${m.from === "admin" ? "ad" : "pg"}">${m.tipe === "order" ? "Pesanan: " : ""}${esc(m.text)}<small>${esc(waktu(m.createdAt, true))}</small></div>`).join("")
       || `<div class="ch-empty">Belum ada pesan.</div>`;
     if (dekat || msgs.length < 2) box.scrollTop = box.scrollHeight;
   }
@@ -225,6 +262,7 @@ export function mount(el, ctx) {
     if (a.dataset.a === "send") kirim();
     else if (a.dataset.a === "back") tutupView();
     else if (a.dataset.a === "close") tutupChat();
+    else if (a.dataset.a === "push") aktifkanPush();
   });
   el.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && e.target && e.target.id === "chInp") { e.preventDefault(); kirim(); }

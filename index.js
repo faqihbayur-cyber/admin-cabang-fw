@@ -165,6 +165,13 @@ async function navigate() {
 
 window.addEventListener("hashchange", navigate);
 
+/* Notifikasi push diketuk saat aplikasi sudah terbuka -> pindah ke menu Chat */
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.addEventListener("message", (e) => {
+    if (e.data && e.data.aksi === "buka-chat") location.hash = "#/chat";
+  });
+}
+
 /* ---------- Logout ---------- */
 $("btnLogout").addEventListener("click", async () => {
   const ok = await confirmBox({
