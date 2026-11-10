@@ -1,0 +1,111 @@
+/* analisa.css — view Analisa: periode, KPI kategori, list customer */
+.v-an {
+  --an-aktif: #166534;
+  --an-aktif-bg: #dcfce7;
+  --an-jarang: #b45309;
+  --an-jarang-bg: #fef3c7;
+  --an-nol: var(--danger);
+  --an-nol-bg: #fee2e2;
+  display: flex; flex-direction: column; gap: 12px; padding-bottom: 24px;
+}
+
+/* ---------- Periode ---------- */
+.an-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.an-chip {
+  border: 1px solid var(--border); background: var(--surface); color: var(--text-muted);
+  border-radius: 99px; padding: 7px 16px; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.an-chip.on { background: var(--primary); border-color: var(--primary); color: #fff; }
+.an-owner { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.an-owner::-webkit-scrollbar { display: none; }
+.an-owner .an-chip { flex-shrink: 0; white-space: nowrap; }
+
+.an-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.an-range { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+.an-refresh {
+  border: 0; background: transparent; color: var(--primary); font-size: 13px; font-weight: 700;
+  cursor: pointer; padding: 4px 0;
+}
+.an-refresh:disabled { color: var(--text-muted); cursor: default; }
+
+/* ---------- KPI (sekaligus filter kategori) ---------- */
+.an-kpi { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.an-kpi-card {
+  display: flex; flex-direction: column; gap: 2px; text-align: left; cursor: pointer;
+  background: var(--surface); color: var(--text); border: 2px solid transparent;
+  border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 10px 14px;
+}
+.an-kpi-card.on { border-color: var(--primary); }
+.an-kpi-num { font-size: 24px; font-weight: 800; color: var(--primary-dark); min-height: 30px; }
+.an-kpi-num.skel { display: block; height: 26px; width: 48px; }
+.an-kpi-lbl { font-size: 14px; font-weight: 700; }
+.an-kpi-sub { font-size: 12px; color: var(--text-muted); }
+.an-kpi-card.aktif .an-kpi-num { color: var(--an-aktif); }
+.an-kpi-card.jarang .an-kpi-num { color: var(--an-jarang); }
+.an-kpi-card.nol .an-kpi-num { color: var(--an-nol); }
+
+.an-note { font-size: 13px; color: var(--text-muted); line-height: 1.45; }
+.an-note:empty { display: none; }
+
+/* ---------- Cari ---------- */
+.an-search input {
+  width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 11px 14px; color: var(--text); background: var(--surface); font-family: inherit; font-size: 16px;
+}
+.an-search input:focus { outline: 2px solid var(--primary); outline-offset: 1px; border-color: transparent; }
+
+/* ---------- List ---------- */
+.an-list { display: flex; flex-direction: column; gap: 10px; }
+.an-empty {
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm);
+  padding: 28px 18px; text-align: center; color: var(--text-muted); font-size: 14px; line-height: 1.5;
+}
+.an-item { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden; }
+.an-item-main {
+  width: 100%; display: flex; align-items: center; gap: 12px; border: 0; background: transparent;
+  padding: 12px 14px; text-align: left; cursor: pointer; color: var(--text);
+}
+.an-item-main:active { background: var(--primary-light); }
+.an-item-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.an-item-name { font-weight: 600; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.an-item-sub { font-size: 12px; color: var(--text-muted); }
+
+.an-avatar {
+  width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
+  background: var(--primary-light); color: var(--primary-dark);
+  display: grid; place-items: center; font-weight: 700; font-size: 17px;
+}
+.an-avatar.aktif { background: var(--an-aktif-bg); color: var(--an-aktif); }
+.an-avatar.jarang { background: var(--an-jarang-bg); color: var(--an-jarang); }
+.an-avatar.nol { background: var(--an-nol-bg); color: var(--an-nol); }
+
+.an-badge {
+  flex-shrink: 0; min-width: 44px; text-align: center; font-size: 13px; font-weight: 800;
+  padding: 4px 10px; border-radius: 99px; background: var(--primary-light); color: var(--primary-dark);
+}
+.an-badge.aktif { background: var(--an-aktif-bg); color: var(--an-aktif); }
+.an-badge.jarang { background: var(--an-jarang-bg); color: var(--an-jarang); }
+.an-badge.nol { background: var(--an-nol-bg); color: var(--an-nol); }
+
+/* detail tanggal (ketuk baris untuk buka) */
+.an-detail { display: none; padding: 0 14px 14px; }
+.an-item.open .an-detail { display: block; }
+.an-dates { display: flex; flex-wrap: wrap; gap: 6px; }
+.an-date {
+  font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 99px;
+  background: var(--bg); color: var(--text-muted);
+}
+.an-dates-empty { font-size: 13px; color: var(--text-muted); line-height: 1.45; }
+
+.an-more {
+  width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px;
+  background: var(--surface); color: var(--primary); font-weight: 700; font-size: 14px; cursor: pointer;
+}
+.an-more:active { background: var(--primary-light); }
+
+/* ---------- Skeleton ---------- */
+.an-item.skel-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; pointer-events: none; }
+.an-item.skel-row .an-avatar { background: transparent; }
+.an-item.skel-row .an-item-text { gap: 8px; }
+.an-skel-name { display: block; height: 16px; width: 55%; }
+.an-skel-sub { display: block; height: 12px; width: 35%; }
