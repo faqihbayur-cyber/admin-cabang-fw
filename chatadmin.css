@@ -55,3 +55,6 @@
 .ch-push p { margin: 0 0 8px; }
 .ch-push p:last-child { margin: 0; }
 .ch-push button { font: inherit; font-size: 13px; font-weight: 700; border: 0; border-radius: 10px; background: var(--primary, #0b7dda); color: #fff; padding: 8px 12px; cursor: pointer; }
+
+/* tab WhatsApp: label mode AI */
+.ch-tag.adm { color: #92400e; background: #fef3c7; }

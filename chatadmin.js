@@ -1,6 +1,7 @@
 // chatadmin.js — inbox chat pelanggan anonim (web adminCabang)
 // Sumber data (baca saja): chats/{uid} dan chats/{uid}/messages/{id}
 // Semua tulisan lewat Cloud Functions: balasPesan, tutupChat, tandaiDibaca (App Check wajib).
+// Tab WhatsApp (baca saja): wa_customers/{nomor} dan wa_messages (phone, role, text, createdAt).
 // Pasang: taruh di folder yang sama dengan visitors.js dan ui.js, lalu daftarkan seperti visitors.js (export mount + css).
 import { getApps } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check.js";
@@ -61,6 +62,11 @@ export function mount(el, ctx) {
   let first = true;             // snapshot pertama tidak memicu notifikasi
   let sending = false;
   const marking = new Set();
+  const waChats = new Map();    // nomor -> data wa_customers
+  let selWa = null;             // nomor WA yang dibuka
+  let waMsgs = [];
+  let unsubWa = null, unsubWaMsgs = null;
+  let waErr = false;
 
   try {
     initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider(SITE_KEY), isTokenAutoRefreshEnabled: true });
@@ -111,6 +117,22 @@ export function mount(el, ctx) {
   const nama = (c, uid) => (c.order && c.order.nama) || `Pengunjung ${String(uid).slice(-4)}`;
   const unreadTotal = () => { let n = 0; chats.forEach((c) => { n += c.unreadAdmin || 0; }); return n; };
 
+  /* ---------- daftar WhatsApp ---------- */
+  const msOf = (t) => (t && t.toMillis && t.toMillis()) || 0;
+  function waRows() {
+    const arr = [...waChats.entries()].sort((a, b) => msOf(b[1].updatedAt) - msOf(a[1].updatedAt));
+    if (!arr.length) return `<div class="ch-empty">${waErr ? "Gagal memuat chat WhatsApp. Cek aturan Firestore (wa_customers)." : "Belum ada chat WhatsApp."}</div>`;
+    return arr.map(([ph, c]) => {
+      const bot = c.aiMode === "on";
+      return `
+      <button type="button" class="ch-item${ph === selWa ? " on" : ""}" data-wa="${esc(ph)}">
+        <div class="ch-i1"><b>${esc(c.name || ph)}</b><span>${esc(waktu(c.updatedAt))}</span></div>
+        <div class="ch-i2"><span class="ch-prev">${c.lastRole === "ai" ? "AI: " : ""}${esc(c.lastMessage || "")}</span></div>
+        <span class="ch-tag${bot ? "" : " adm"}">${bot ? "Bot AI" : "Dipegang admin"}</span>
+      </button>`;
+    }).join("");
+  }
+
   /* ---------- daftar ---------- */
   function paintList() {
     const arr = [...chats.entries()]
@@ -133,18 +155,30 @@ export function mount(el, ctx) {
       <div class="ch-tabs">
         <button type="button" data-f="aktif" class="${filter === "aktif" ? "on" : ""}">Aktif</button>
         <button type="button" data-f="tutup" class="${filter === "tutup" ? "on" : ""}">Ditutup</button>
+        <button type="button" data-f="wa" class="${filter === "wa" ? "on" : ""}">WhatsApp</button>
       </div>
-      <div class="ch-rows">${rows || `<div class="ch-empty">${filter === "aktif" ? "Belum ada chat aktif." : "Belum ada chat yang ditutup."}</div>`}</div>`;
+      <div class="ch-rows">${filter === "wa" ? waRows() : rows || `<div class="ch-empty">${filter === "aktif" ? "Belum ada chat aktif." : "Belum ada chat yang ditutup."}</div>`}</div>`;
   }
 
   /* ---------- percakapan ---------- */
   function buildThread() {
-    if (!sel) {
+    if (!sel && !selWa) {
       root.classList.remove("thr");
       thrEl.innerHTML = `<div class="ch-empty big">Pilih chat di sebelah kiri.</div>`;
       return;
     }
     root.classList.add("thr");
+    if (selWa) {
+      thrEl.innerHTML = `
+      <div class="ch-th">
+        <button type="button" class="ch-back" data-a="back" aria-label="Kembali">‹</button>
+        <div class="ch-tt" id="chTitle"></div>
+      </div>
+      <div class="ch-msgs" id="chMsgs"></div>
+      <div class="ch-note" id="chNote"></div>`;
+      paintThread();
+      return;
+    }
     thrEl.innerHTML = `
       <div class="ch-th">
         <button type="button" class="ch-back" data-a="back" aria-label="Kembali">‹</button>
@@ -161,7 +195,23 @@ export function mount(el, ctx) {
     paintThread();
   }
 
+  function paintWaThread() {
+    const c = waChats.get(selWa) || {};
+    const t = $("#chTitle");
+    if (!t) return;
+    const bot = c.aiMode === "on";
+    t.innerHTML = `<b>${esc(c.name || selWa)}</b><small>${esc(selWa)} · ${bot ? "Bot AI aktif" : "Dipegang admin"}</small>`;
+    $("#chNote").textContent = "Chat WhatsApp, hanya lihat. Balas lewat WA Business. Untuk ambil alih dari AI, kirim #ADMIN " + selWa + " dari WA admin pusat.";
+    const box = $("#chMsgs");
+    const dekat = box.scrollHeight - box.scrollTop - box.clientHeight < 90;
+    box.innerHTML = waMsgs.map((m) => `
+      <div class="ch-m ${m.role === "user" ? "pg" : "ad"}">${esc(m.text)}<small>${m.role === "user" ? "" : "AI · "}${esc(waktu(m.createdAt, true))}</small></div>`).join("")
+      || `<div class="ch-empty">Belum ada pesan.</div>`;
+    if (dekat || waMsgs.length < 2) box.scrollTop = box.scrollHeight;
+  }
+
   function paintThread() {
+    if (selWa) return paintWaThread();
     if (!sel) return;
     const c = chats.get(sel);
     if (!c) return;
@@ -204,7 +254,8 @@ export function mount(el, ctx) {
   }
 
   function bukaChat(uid) {
-    sel = uid; msgs = [];
+    sel = uid; msgs = []; selWa = null; waMsgs = [];
+    if (unsubWaMsgs) { unsubWaMsgs(); unsubWaMsgs = null; }
     if (unsubMsgs) { unsubMsgs(); unsubMsgs = null; }
     buildThread();
     paintList();
@@ -221,8 +272,26 @@ export function mount(el, ctx) {
     const i = $("#chInp"); if (i && window.innerWidth >= 900) i.focus();
   }
 
+  function bukaWa(ph) {
+    selWa = ph; sel = null; msgs = []; waMsgs = [];
+    if (unsubMsgs) { unsubMsgs(); unsubMsgs = null; }
+    if (unsubWaMsgs) { unsubWaMsgs(); unsubWaMsgs = null; }
+    buildThread();
+    paintList();
+    unsubWaMsgs = onSnapshot(
+      query(collection(db, "wa_messages"), where("phone", "==", ph), orderBy("createdAt", "desc"), limit(200)),
+      (s) => {
+        if (!alive || selWa !== ph) return;
+        waMsgs = s.docs.map((d) => ({ id: d.id, ...d.data() })).reverse();
+        paintThread();
+      },
+      (err) => { console.error(err); toast("Gagal memuat percakapan WhatsApp.", "error"); }
+    );
+  }
+
   function tutupView() {
-    sel = null; msgs = [];
+    sel = null; msgs = []; selWa = null; waMsgs = [];
+    if (unsubWaMsgs) { unsubWaMsgs(); unsubWaMsgs = null; }
     if (unsubMsgs) { unsubMsgs(); unsubMsgs = null; }
     buildThread();
     paintList();
@@ -253,10 +322,17 @@ export function mount(el, ctx) {
 
   /* ---------- event ---------- */
   el.addEventListener("click", (e) => {
+    const w = e.target.closest("[data-wa]");
+    if (w) return bukaWa(w.dataset.wa);
     const item = e.target.closest(".ch-item");
     if (item) return bukaChat(item.dataset.uid);
     const f = e.target.closest("[data-f]");
-    if (f) { filter = f.dataset.f; return paintList(); }
+    if (f) {
+      const nf = f.dataset.f;
+      if ((nf === "wa" && sel) || (nf !== "wa" && selWa)) tutupView();
+      filter = nf;
+      return paintList();
+    }
     const a = e.target.closest("[data-a]");
     if (!a) return;
     if (a.dataset.a === "send") kirim();
@@ -304,6 +380,18 @@ export function mount(el, ctx) {
         listEl.innerHTML = `<div class="ch-empty">Gagal memuat chat. Cek aturan Firestore (chats) dan index.</div>`;
         toast("Gagal memuat daftar chat.", "error");
       });
+      unsubWa = onSnapshot(
+        query(collection(db, "wa_customers"), orderBy("updatedAt", "desc"), limit(100)),
+        (s) => {
+          if (!alive) return;
+          waErr = false;
+          waChats.clear();
+          s.docs.forEach((d) => waChats.set(d.id, d.data()));
+          if (filter === "wa") paintList();
+          if (selWa) paintThread();
+        },
+        (err) => { console.error(err); waErr = true; if (filter === "wa") paintList(); }
+      );
     } catch (err) {
       console.error(err);
       listEl.innerHTML = `<div class="ch-empty">Gagal memuat chat. Coba muat ulang halaman.</div>`;
@@ -311,5 +399,5 @@ export function mount(el, ctx) {
   }
   mulai();
 
-  return () => { alive = false; if (unsubList) unsubList(); if (unsubMsgs) unsubMsgs(); };
+  return () => { alive = false; if (unsubList) unsubList(); if (unsubMsgs) unsubMsgs(); if (unsubWa) unsubWa(); if (unsubWaMsgs) unsubWaMsgs(); };
 }
